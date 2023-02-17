@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"test-existence")
+  cargo
+  ;;
+"list")
+  ls "$CARGO_BIN"
+  ;;
+"install")
+  cargo install $*
+  ;;
+"remove")
+  cargo uninstall $*
+  ;;
+"upgrade")
+  cargo install-update $*
+  ;;
+"upgrade-all")
+  cargo install-update -a
+  ;;
+"install-self")
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ;;
+esac

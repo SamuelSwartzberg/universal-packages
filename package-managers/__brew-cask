@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"test-existence")
+  brew help >/dev/null 2>&1
+  ;;
+"list")
+  brew list --cask
+  ;;
+"install")
+  brew install --cask $*
+  ;;
+"remove")
+  brew uninstall --cask $*
+  ;;
+"upgrade")
+  brew upgrade --cask $*
+  ;;
+"upgrade-all")
+  brew upgrade --cask
+  ;;
+"install-self")
+  /usr/env/bin bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ;;
+esac

@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"test-existence")
+  [[ -d "$GIT_PACKAGES" ]] || exit 1
+  ;;
+"list")
+  for package in "$GIT_PACKAGES"/*; do
+    (cd "$package" && { git config --get remote.origin.url || echo "package has no remote url: $package"; })
+  done
+  ;;
+"install")
+  (
+    cd "$GIT_PACKAGES" || exit 1
+    dirname="$(basename "$1" ".git")"
+    if [[ -d "$dirname" ]]; then
+      echo "package already installed: $dirname"
+      exit 1
+    fi
+    git clone "$1" || exit 1
+    cd "$dirname" || exit 1
+    (
+      if [[ -f ./install.sh ]]; then
+        ./install.sh
+      elif [[ -x ./"$dirname" ]]; then
+        ask "executable found with same name as package, link?" N && universal-pkg git-packages link "$dirname" "$dirname"
+      elif [[ -f ./Makefile ]]; then
+        ask "Makefile found, run make?" N && make install
+      else
+        ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && {
+          executable_name="$(select dir in $(ls); do
+            echo "$dir"
+            break
+          done)"
+          read -p "rename to (optional): " rename_to
+          universal-pkg git-packages link "$dirname" "$executable_name" "$rename_to"
+        }
+      fi
+    )
+  )
+  ;;
+"remove")
+  rm -rf "${GIT_PACKAGES:?}"/"${1:?}"
+  ;;
+"upgrade")
+  (cd "${GIT_PACKAGES:?}"/"${1:?}" &&
+    git pull)
+  ;;
+"upgrade-all")
+  for package in "$GIT_PACKAGES"/*; do
+    (cd "$package" && git pull)
+  done
+  ;;
+"which")
+  (
+    cd "$GIT_PACKAGES" || exit 1
+    if [[ -d "$1" ]]; then
+      echo "$GIT_PACKAGES/$1"
+    else
+      echo "package not installed: $1"
+      exit 1
+    fi
+  )
+  ;;
+"link") # args: package_name, executable_name, rename_to (optional)
+  if [[ -z "$1" || -z "$2" ]]; then
+    echo "missing arguments"
+    echo "usage: universal-pkg git-packages link package_name executable_name [rename_to]"
+    exit 1
+  fi
+  chmod +x "$GIT_PACKAGES/$1/$2"
+  if [[ -z "$3" ]]; then
+    ln -sf "$GIT_PACKAGES/$1/$2" "$HOMEBIN"/"$2"
+  else
+    ln -sf "$GIT_PACKAGES/$1/$2" "$HOMEBIN"/"$3"
+  fi
+  ;;
+"install-self")
+  mkdir -p "$GIT_PACKAGES"
+  ;;
+esac

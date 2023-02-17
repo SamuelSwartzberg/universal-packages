@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+  "list")
+    pip3 list --format freeze | cut -d "=" -f 1
+    ;;
+  "install")
+    pip3 install $*
+    ;;
+  "remove")
+    pip3 uninstall $*
+    ;;
+  "upgrade")
+    pipupgrade $*
+    ;;
+  "upgrade-all")
+    pipupgrade
+    ;;
+  "test-existence")
+    pip3
+    ;;
+  "which")
+    path="$(pip3 show $1 | grep Location | cut -d " " -f 2)/$1"
+    if [[ -d "$path" ]]; then
+      echo "$path"
+    else
+      echo "package not installed: $1"
+      exit 1
+    fi
+    ;;
+  "install-self")
+    piu i python
+    ;;
+esac

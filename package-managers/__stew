@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+  "test-existence")
+    stew
+    ;;
+  "list")
+    stew list
+    ;;
+  "install")
+    stew install $*
+    ;;
+  "remove")
+    stew uninstall $*
+    ;;
+  "upgrade")
+    stew upgrade $*
+    ;;
+  "upgrade-all")
+    stew upgrade --all
+    ;;
+  "install-self")
+    brew install marwanhawari/tap/stew
+    ;;
+esac

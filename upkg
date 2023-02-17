@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
+
+package_manager="$1"
+
+if [ -z "$package_manager" ]; then
+  echo "usage: universal-pkg [<package-manager>] <subcommand> [args]"
+  exit 1
+fi
+
+# short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
+
+case "$package_manager" in
+"gp" | "gitp" | "gitpackages" | "gpackages")
+  package_manager="git-packages"
+  ;;
+"_b" | "brew")
+  package_manager="os"
+  ;;
+"apt" | "apt-get")
+  package_manager="os"
+  ;;
+"_p" | "pip3" | "python")
+  package_manager="pip"
+  ;;
+"bcask" | "b-cask")
+  package_manager="brew-cask"
+  ;;
+"btap" | "b-tap")
+  package_manager="brew-tap"
+  ;;
+"_c" | "rust")
+  package_manager="cargo"
+  ;;
+"_n" | "node")
+  package_manager="npm"
+  ;;
+esac
+
+package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
+
+if [ ! -f "$package_manager_command_path" ]; then
+  package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap")
+
+  for package_manager in "${package_mangagers[@]}"; do
+    universal-pkg "$package_manager" "$@"
+  done
+  exit 0
+else
+  shift
+fi
+
+pkg_command() { $package_manager_command_path "$@"; }
+subcommand="$1"
+shift
+
+pkg_command test-existence >/dev/null || pkg_command install-self
+
+case "$subcommand" in
+es | "echo-self")
+  echo "$package_manager"
+  ;;
+l | "list")
+  pkg_command list
+  ;;
+b | "backup")
+  universal-pkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
+  ;;
+rb | "read-backup")
+  cat "$MDEPENDENCIES_PARENT"/"$package_manager"
+  ;;
+m | "missing")
+  zet diff <(universal-pkg "$package_manager" read-backup) <(universal-pkg "$package_manager" list)
+  ;;
+a | "added")
+  zet diff <(universal-pkg "$package_manager" list) <(universal-pkg "$package_manager" read-backup)
+  ;;
+d | "difference")
+  zet single <(universal-pkg "$package_manager" read-backup) <(universal-pkg "$package_manager" list)
+  ;;
+miv | "missing-installable-verbose")
+  missing_list="$(universal-pkg "$package_manager" missing)" && exit 0
+  echo "missing packages for $(tput setaf 3)$package_manager$(tput sgr0):"
+  echo "$missing_list" | sed 's/^/  /'
+  echo ""
+  exit 1
+  ;;
+im | "install-missing")
+  missing_list="$(universal-pkg "$package_manager" missing | tr "\n" " ")"
+  [ -z "$missing_list" ] || pkg_command install "$missing_list"
+  ;;
+nm | "none-missing")
+  ! universal-pkg missing-installable | grep -E "\w" >/dev/null
+  ;;
+i | "install")
+  pkg_command install "$@"
+  ;;
+r | "remove")
+  pkg_command remove "$@"
+  ;;
+is | "install-self")
+  pkg_command install-self "$@"
+  ;;
+u | "upgrade")
+  pkg_command upgrade "$@"
+  ;;
+w | "which")
+  pkg_command which "$@"
+  ;;
+"link")
+  pkg_command link "$@"
+  ;;
+ua | "upgrade-all")
+  pkg_command upgrade-all "$@"
+  ;;
+esac

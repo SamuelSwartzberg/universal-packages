@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+  "test-existence")
+    piu selftest
+    ;;
+  "list")
+    piu l
+    ;;
+  "install")
+    piu i $*
+    ;;
+  "remove")
+    piu r $*
+    ;;
+  "upgrade")
+    piu u $*
+    ;;
+  "upgrade-all")
+    piu u
+    ;;
+  "install-self")
+    universal-pkg brew "install-self"
+    ;;
+esac

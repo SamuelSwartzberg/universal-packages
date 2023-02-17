@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+  "test-existence")
+    npm help || exit 1
+    ;;
+  "list")
+    ls $(npm root -g)
+    ;;
+  "install")
+    npm install -g $*
+    ;;
+  "remove")
+    npm uninstall -g $*
+    ;;
+  "upgrade")
+    npm update -g $*
+    ;;
+  "upgrade-all")
+    npx npm-check --global --update-all
+    ;;
+  "install-self")
+    piu i node
+    ;;
+esac

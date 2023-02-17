@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"test-existence")
+  brew help >/dev/null 2>&1
+  ;;
+"list")
+  brew tap
+  ;;
+"install")
+  brew tap $*
+  ;;
+"remove")
+  brew untap $*
+  ;;
+"upgrade")
+  exit 0 # no upgrade for brew tap
+  ;;
+"upgrade-all")
+  exit 0 # no upgrade for brew tap
+  ;;
+"install-self")
+  universal-pkg brew-cask "install-self"
+  ;;
+esac
+
+## todo only mac
