@@ -11,6 +11,8 @@ fi
 
 # short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
 
+package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew")
+
 case "$package_manager" in
 "gp" | "gitp" | "gitpackages" | "gpackages")
   package_manager="git-packages"
@@ -36,12 +38,18 @@ case "$package_manager" in
 "_n" | "node")
   package_manager="npm"
   ;;
+"_s" | "git-release")
+  package_manager="stew"
+  ;;
+"lpm" | "list-package-managers")
+  echo "${package_mangagers[@]}"
+  exit 0
+  ;;
 esac
 
 package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 
 if [ ! -f "$package_manager_command_path" ]; then
-  package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap")
 
   for package_manager in "${package_mangagers[@]}"; do
     universal-pkg "$package_manager" "$@"
@@ -68,7 +76,7 @@ b | "backup")
   universal-pkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
   ;;
 rb | "read-backup")
-  cat "$MDEPENDENCIES_PARENT"/"$package_manager"
+  cat "$MDEPENDENCIES"/"$package_manager"
   ;;
 m | "missing")
   zet diff <(universal-pkg "$package_manager" read-backup) <(universal-pkg "$package_manager" list)
