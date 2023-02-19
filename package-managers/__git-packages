@@ -26,7 +26,7 @@ case "$subcommand" in
       if [[ -f ./install.sh ]]; then
         ./install.sh
       elif [[ -x ./"$dirname" ]]; then
-        ask "executable found with same name as package, link?" N && universal-pkg git-packages link "$dirname" "$dirname"
+        ask "executable found with same name as package, link?" N && upkg git-packages link "$dirname" "$dirname"
       elif [[ -f ./Makefile ]]; then
         ask "Makefile found, run make?" N && make install
       else
@@ -36,7 +36,7 @@ case "$subcommand" in
             break
           done)"
           read -p "rename to (optional): " rename_to
-          universal-pkg git-packages link "$dirname" "$executable_name" "$rename_to"
+          upkg git-packages link "$dirname" "$executable_name" "$rename_to"
         }
       fi
     )
@@ -68,7 +68,7 @@ case "$subcommand" in
 "link") # args: package_name, executable_name, rename_to (optional)
   if [[ -z "$1" || -z "$2" ]]; then
     echo "missing arguments"
-    echo "usage: universal-pkg git-packages link package_name executable_name [rename_to]"
+    echo "usage: upkg git-packages link package_name executable_name [rename_to]"
     exit 1
   fi
   chmod +x "$GIT_PACKAGES/$1/$2"

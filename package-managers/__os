@@ -23,6 +23,6 @@ case "$subcommand" in
     piu u
     ;;
   "install-self")
-    universal-pkg brew "install-self"
+    upkg brew "install-self"
     ;;
 esac

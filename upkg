@@ -52,7 +52,7 @@ package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 if [ ! -f "$package_manager_command_path" ]; then
 
   for package_manager in "${package_mangagers[@]}"; do
-    universal-pkg "$package_manager" "$@"
+    upkg "$package_manager" "$@"
   done
   exit 0
 else
@@ -73,33 +73,33 @@ l | "list")
   pkg_command list
   ;;
 b | "backup")
-  universal-pkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
+  upkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
   ;;
 rb | "read-backup")
   cat "$MDEPENDENCIES"/"$package_manager"
   ;;
 m | "missing")
-  zet diff <(universal-pkg "$package_manager" read-backup) <(universal-pkg "$package_manager" list)
+  zet diff <(upkg "$package_manager" read-backup) <(upkg "$package_manager" list)
   ;;
 a | "added")
-  zet diff <(universal-pkg "$package_manager" list) <(universal-pkg "$package_manager" read-backup)
+  zet diff <(upkg "$package_manager" list) <(upkg "$package_manager" read-backup)
   ;;
 d | "difference")
-  zet single <(universal-pkg "$package_manager" read-backup) <(universal-pkg "$package_manager" list)
+  zet single <(upkg "$package_manager" read-backup) <(upkg "$package_manager" list)
   ;;
 miv | "missing-installable-verbose")
-  missing_list="$(universal-pkg "$package_manager" missing)" && exit 0
+  missing_list="$(upkg "$package_manager" missing)" && exit 0
   echo "missing packages for $(tput setaf 3)$package_manager$(tput sgr0):"
   echo "$missing_list" | sed 's/^/  /'
   echo ""
   exit 1
   ;;
 im | "install-missing")
-  missing_list="$(universal-pkg "$package_manager" missing | tr "\n" " ")"
+  missing_list="$(upkg "$package_manager" missing | tr "\n" " ")"
   [ -z "$missing_list" ] || pkg_command install "$missing_list"
   ;;
 nm | "none-missing")
-  ! universal-pkg missing-installable | grep -E "\w" >/dev/null
+  ! upkg missing-installable | grep -E "\w" >/dev/null
   ;;
 i | "install")
   pkg_command install "$@"

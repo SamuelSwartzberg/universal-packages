@@ -23,7 +23,7 @@ case "$subcommand" in
   exit 0 # no upgrade for brew tap
   ;;
 "install-self")
-  universal-pkg brew-cask "install-self"
+  upkg brew-cask "install-self"
   ;;
 esac
 
