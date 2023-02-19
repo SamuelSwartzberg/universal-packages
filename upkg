@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null
 package_manager="$1"
 
 if [ -z "$package_manager" ]; then
-  echo "usage: universal-pkg [<package-manager>] <subcommand> [args]"
+  echo "usage: upkg [<package-manager>] <subcommand> [args]"
   exit 1
 fi
 
