@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"test-existence")
+  go help || exit 1
+  ;;
+"list")
+  ls "$GOPATH"/src
+  ;;
+"install")
+  go install $*
+  ;;
+"remove")
+  go clean -i $*
+  ;;
+"upgrade")
+  go get -u $*
+  ;;
+"upgrade-all")
+  cd "$GOPATH"/bin && go get -u -- *
+  ;;
+"install-self")
+  piu i go
+  ;;
+
+esac
