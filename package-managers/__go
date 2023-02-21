@@ -29,7 +29,7 @@ case "$subcommand" in
   cd "$GOPATH"/bin && go get -u -- *
   ;;
 "install-self")
-  piu i go
+  brew install go
   ;;
 
 esac

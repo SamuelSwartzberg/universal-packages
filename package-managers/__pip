@@ -29,6 +29,6 @@ case "$subcommand" in
   pip3
   ;;
 "install-self")
-  piu i python
+  brew install python
   ;;
 esac

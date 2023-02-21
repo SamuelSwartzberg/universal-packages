@@ -11,7 +11,7 @@ fi
 
 # short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
 
-package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew", "go")
+package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew" "go")
 
 case "$package_manager" in
 "gp" | "gitp" | "gitpackages" | "gpackages")
@@ -63,7 +63,7 @@ pkg_command() { $package_manager_command_path "$@"; }
 subcommand="$1"
 shift
 
-pkg_command test-existence >/dev/null || pkg_command install-self
+pkg_command test-existence >/dev/null 2>&1 || pkg_command install-self
 
 case "$subcommand" in
 es | "echo-self")
@@ -72,14 +72,11 @@ es | "echo-self")
 l | "list") # should list one package per line, with no other output
   pkg_command list
   ;;
-lb | "list-backupable") # TODO
-  pkg_command list-backupable
-  ;;
 wv | "with-version")
   pkg_command list-version | grep "$1"
   ;;
 v | "version")
-  upk "$package_manager" with-version "$@" | cut -d'@' -f2
+  $0 "$package_manager" with-version "$@" | cut -d'@' -f2
   ;;
 lv | "list-version")
   pkg_command list-version "$@"
@@ -88,7 +85,10 @@ ct | "count")
   pkg_command list | wc -l
   ;;
 ii | "is-installed")
-  pkg_command list | grep "$1"
+  pkg_command list | grep "^$1$"
+  ;;
+iip | "is-installed-package-manager")
+  pkg_command list | grep -q "^$1$" && echo "$package_manager"
   ;;
 b | "backup")
   upkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"

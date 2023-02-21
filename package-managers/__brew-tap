@@ -5,7 +5,7 @@ shift
 
 case "$subcommand" in
 "test-existence")
-  brew help >/dev/null 2>&1
+  brew help
   ;;
 "list")
   brew tap

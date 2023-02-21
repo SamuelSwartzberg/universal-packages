@@ -29,6 +29,6 @@ case "$subcommand" in
   npx npm-check --global --update-all
   ;;
 "install-self")
-  piu i node
+  brew install node
   ;;
 esac

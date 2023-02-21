@@ -15,7 +15,7 @@ function get_git_url_from_installed_thing() {
   local package_name
   package_name="$(get_package_name_from_anything "${1:?}")"
   (
-    cd "${GIT_PACKAGES:?}/${package_name1:?}" && { git config --get remote.origin.url || echo "package has no remote url: ${package_name:?}"; }
+    cd "${GIT_PACKAGES:?}/${package_name:?}" && { git config --get remote.origin.url || echo "package has no remote url: ${package_name:?}"; }
   )
 }
 
@@ -24,7 +24,7 @@ function get_git_url_from_package_identifier_or_url() {
 }
 
 function get_package_identifier_from_url_or_package_identifier() {
-  echo "${1/https:\/\/github.com\//}" | sed 's/.git//'
+  echo "${1/https:\/\/github.com\//}" | sed 's/\.git//'
 }
 
 function get_package_identifier_from_package_name() {
@@ -90,9 +90,10 @@ case "$subcommand" in
   ;;
 "which")
   (
+    package_name="$(get_package_name_from_anything "${1:?}")"
     cd "$GIT_PACKAGES" || exit 1
-    if [[ -d "$1" ]]; then
-      get_package_path "$1"
+    if [[ -d "$package_name" ]]; then
+      get_package_path "$package_name"
     fi
   )
   ;;
