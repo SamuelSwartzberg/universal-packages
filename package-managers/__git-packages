@@ -3,51 +3,85 @@
 subcommand="$1"
 shift
 
+# package name = name of the repo and thus the directory in $GIT_PACKAGES
+# package identifier = <github username>/<package name>
+# package url = https://github.com/<package identifier>[.git]
+
+function get_package_name_from_anything() {
+  basename "${1:?}" ".git"
+}
+
+function get_git_url_from_installed_thing() {
+  local package_name
+  package_name="$(get_package_name_from_anything "${1:?}")"
+  (
+    cd "${GIT_PACKAGES:?}/${package_name1:?}" && { git config --get remote.origin.url || echo "package has no remote url: ${package_name:?}"; }
+  )
+}
+
+function get_git_url_from_package_identifier_or_url() {
+  echo "https://github.com/$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
+}
+
+function get_package_identifier_from_url_or_package_identifier() {
+  echo "${1/https:\/\/github.com\//}" | sed 's/.git//'
+}
+
+function get_package_identifier_from_package_name() {
+  get_package_identifier_from_url_or_package_identifier "$(get_git_url_from_installed_thing "${1:?}")"
+}
+
+function get_package_path() {
+  local package_name
+  package_name="$(get_package_name_from_anything "${1:?}")"
+  echo "${GIT_PACKAGES:?}/${package_name:?}"
+}
+
 case "$subcommand" in
 "test-existence")
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
   for package in "$GIT_PACKAGES"/*; do
-    (cd "$package" && { git config --get remote.origin.url || echo "package has no remote url: $package"; })
+    get_package_identifier_from_package_name "$package"
+  done
+  ;;
+"list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `stew`
+  for package in "$GIT_PACKAGES"/*; do
+    echo "$(get_package_identifier_from_package_name "$package")@$(cd "$package" && git rev-parse --short HEAD)"
   done
   ;;
 "install")
   (
     cd "$GIT_PACKAGES" || exit 1
-    dirname="$(basename "$1" ".git")"
-    if [[ -d "$dirname" ]]; then
-      echo "package already installed: $dirname"
+    package_name="$(get_package_name_from_anything "${1:?}")"
+    if [[ -d "$package_name" ]]; then
+      echo "package already installed: $package_name"
       exit 1
     fi
-    git clone "$1" || exit 1
-    cd "$dirname" || exit 1
+    git clone "$(get_git_url_from_package_identifier_or_url "${1:?}")" || exit 1
+    cd "$package_name" || exit 1
     (
       if [[ -f ./install.sh ]]; then
         ./install.sh
-      elif [[ -x ./"$dirname" ]]; then
-        ask "executable found with same name as package, link?" N && upkg git-packages link "$dirname" "$dirname"
+      elif [[ -x ./"$package_name" ]]; then
+        ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
       elif [[ -f ./Makefile ]]; then
         ask "Makefile found, run make?" N && make install
       else
-        ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && {
-          executable_name="$(select dir in $(ls); do
-            echo "$dir"
-            break
-          done)"
-          read -p "rename to (optional): " rename_to
-          upkg git-packages link "$dirname" "$executable_name" "$rename_to"
-        }
+        ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && upkg git-packages link "$package_name"
       fi
     )
   )
   ;;
 "remove")
-  rm -rf "${GIT_PACKAGES:?}"/"${1:?}"
+  rm -rf "$(get_package_path "$1"))"
   ;;
 "upgrade")
-  (cd "${GIT_PACKAGES:?}"/"${1:?}" &&
-    git pull)
+  (
+    cd "$(get_package_path "$1")" &&
+      git pull
+  )
   ;;
 "upgrade-all")
   for package in "$GIT_PACKAGES"/*; do
@@ -58,25 +92,29 @@ case "$subcommand" in
   (
     cd "$GIT_PACKAGES" || exit 1
     if [[ -d "$1" ]]; then
-      echo "$GIT_PACKAGES/$1"
-    else
-      echo "package not installed: $1"
-      exit 1
+      get_package_path "$1"
     fi
   )
   ;;
 "link") # args: package_name, executable_name, rename_to (optional)
-  if [[ -z "$1" || -z "$2" ]]; then
+  if [[ -z "$1" ]]; then
     echo "missing arguments"
-    echo "usage: upkg git-packages link package_name executable_name [rename_to]"
+    echo "usage: upkg git-packages link package_name [executable_name]"
     exit 1
   fi
-  chmod +x "$GIT_PACKAGES/$1/$2"
-  if [[ -z "$3" ]]; then
-    ln -sf "$GIT_PACKAGES/$1/$2" "$HOMEBIN"/"$2"
-  else
-    ln -sf "$GIT_PACKAGES/$1/$2" "$HOMEBIN"/"$3"
+  package_path="$(get_package_path "$1")"
+  executable_name="$2"
+  if [[ -z "$executable_name" ]]; then
+    executable_name="$(select dir in $(ls "$package_path"); do
+      echo "$dir"
+      break
+    done)"
   fi
+
+  read -rp "rename to (optional): " rename_to
+
+  chmod +x "$package_path"/"$executable_name"
+  ln -sf "$package_path"/"$executable_name" "$HOMEBIN/${rename_to:-$executable_name}"
   ;;
 "install-self")
   mkdir -p "$GIT_PACKAGES"

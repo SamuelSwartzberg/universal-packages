@@ -10,6 +10,12 @@ case "$subcommand" in
 "list")
   ls "$CARGO_BIN"
   ;;
+"list-version")
+  cut -f 1-2 --delimiter="|" <(cargo install-update --list | tail --lines=+4 | head --lines=-2 | sed -E 's/ +/|/g') | tr -d v | tr "|" "@"
+  ;;
+"which")
+  echo "$CARGO_BIN"/$1
+  ;;
 "install")
   cargo install $*
   ;;

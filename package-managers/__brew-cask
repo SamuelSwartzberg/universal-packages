@@ -10,6 +10,12 @@ case "$subcommand" in
 "list")
   brew list --cask
   ;;
+"list-version")
+  brew list --cask --versions | cut -d "," -f 1 | tr -s " " "@"
+  ;;
+"which")
+  brew --prefix --cask "$1"
+  ;;
 "install")
   brew install --cask $*
   ;;
@@ -23,6 +29,6 @@ case "$subcommand" in
   brew upgrade --cask
   ;;
 "install-self")
-  /usr/env/bin bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   ;;
 esac

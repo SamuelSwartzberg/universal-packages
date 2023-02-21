@@ -3,26 +3,42 @@
 subcommand="$1"
 shift
 
+function get_package_identifier() {
+  echo "${1/https:\/\/github.com\//}" | sed 's/.git//'
+}
+function get_likely_binary_name() {
+  basename "$1" ".git"
+}
+
+package_id="$(get_package_identifier "$1")"
+shift
+
 case "$subcommand" in
-  "test-existence")
-    stew
-    ;;
-  "list")
-    stew list
-    ;;
-  "install")
-    stew install $*
-    ;;
-  "remove")
-    stew uninstall $*
-    ;;
-  "upgrade")
-    stew upgrade $*
-    ;;
-  "upgrade-all")
-    stew upgrade --all
-    ;;
-  "install-self")
-    brew install marwanhawari/tap/stew
-    ;;
+"test-existence")
+  stew
+  ;;
+"list")
+  stew list
+  ;;
+"list-version")
+  stew list --tags
+  ;;
+"which")
+  ls "/Users/sam/.local/share/stew/pkg/$package_id/"*
+  ;;
+"install")
+  stew install "$package_id" $*
+  ;;
+"remove")
+  stew uninstall "$package_id" $*
+  ;;
+"upgrade")
+  stew upgrade "$package_id" $*
+  ;;
+"upgrade-all")
+  stew upgrade --all
+  ;;
+"install-self")
+  brew install marwanhawari/tap/stew
+  ;;
 esac

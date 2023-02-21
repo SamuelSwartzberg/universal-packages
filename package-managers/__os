@@ -4,25 +4,31 @@ subcommand="$1"
 shift
 
 case "$subcommand" in
-  "test-existence")
-    piu selftest
-    ;;
-  "list")
-    piu l
-    ;;
-  "install")
-    piu i $*
-    ;;
-  "remove")
-    piu r $*
-    ;;
-  "upgrade")
-    piu u $*
-    ;;
-  "upgrade-all")
-    piu u
-    ;;
-  "install-self")
-    upkg brew "install-self"
-    ;;
+"test-existence")
+  brew help || exit 1
+  ;;
+"list")
+  brew list --formula $*
+  ;;
+"list-version")
+  brew list --formula --versions | cut -d "," -f 1 | tr -s " " "@"
+  ;;
+"which")
+  brew --prefix --formula "$1"
+  ;;
+"install")
+  brew install $*
+  ;;
+"remove")
+  brew uninstall $*
+  ;;
+"upgrade")
+  brew upgrade $*
+  ;;
+"upgrade-all")
+  brew upgrade
+  ;;
+"install-self")
+  upkg brew-cask "install-self"
+  ;;
 esac

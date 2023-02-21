@@ -10,6 +10,12 @@ case "$subcommand" in
 "list")
   brew tap
   ;;
+"list-version")
+  $0 list # no version for brew tap
+  ;;
+"which")
+  exit 0 # no which for brew tap
+  ;;
 "install")
   brew tap $*
   ;;

@@ -69,8 +69,26 @@ case "$subcommand" in
 es | "echo-self")
   echo "$package_manager"
   ;;
-l | "list")
+l | "list") # should list one package per line, with no other output
   pkg_command list
+  ;;
+lb | "list-backupable") # TODO
+  pkg_command list-backupable
+  ;;
+wv | "with-version")
+  pkg_command list-version | grep "$1"
+  ;;
+v | "version")
+  upk "$package_manager" with-version "$@" | cut -d'@' -f2
+  ;;
+lv | "list-version")
+  pkg_command list-version "$@"
+  ;;
+ct | "count")
+  pkg_command list | wc -l
+  ;;
+ii | "is-installed")
+  pkg_command list | grep "$1"
   ;;
 b | "backup")
   upkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
