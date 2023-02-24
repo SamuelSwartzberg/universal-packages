@@ -28,8 +28,17 @@ case "$subcommand" in
 "upgrade-all")
   exit 0 # no upgrade for brew tap
   ;;
+"package-manager")
+  echo "brew tap"
+  ;;
+"package-manager-version")
+  upkg os "package-manager-version"
+  ;;
+"which-self")
+  which brew
+  ;;
 "install-self")
-  upkg brew-cask "install-self"
+  upkg os "install-self"
   ;;
 esac
 

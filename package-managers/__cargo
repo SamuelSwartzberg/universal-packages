@@ -28,6 +28,15 @@ case "$subcommand" in
 "upgrade-all")
   cargo install-update -a
   ;;
+"package-manager")
+  echo "cargo"
+  ;;
+"package-manager-version")
+  cargo --version | cut -d " " -f 2
+  ;;
+"which-self")
+  which cargo
+  ;;
 "install-self")
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ;;

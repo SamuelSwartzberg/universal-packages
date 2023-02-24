@@ -38,6 +38,15 @@ case "$subcommand" in
 "upgrade-all")
   stew upgrade --all
   ;;
+"package-manager")
+  echo "stew"
+  ;;
+"package-manager-version")
+  stew --version | cut -d " " -f 2
+  ;;
+"which-self")
+  which stew
+  ;;
 "install-self")
   brew install marwanhawari/tap/stew
   ;;

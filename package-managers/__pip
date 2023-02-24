@@ -28,6 +28,15 @@ case "$subcommand" in
 "test-existence")
   pip3
   ;;
+"package-manager")
+  echo "pip3"
+  ;;
+"package-manager-version")
+  pip3 --version | cut -d " " -f 2
+  ;;
+"which-self")
+  which pip3
+  ;;
 "install-self")
   brew install python
   ;;

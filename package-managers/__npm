@@ -28,6 +28,15 @@ case "$subcommand" in
 "upgrade-all")
   npx npm-check --global --update-all
   ;;
+"package-manager")
+  echo "npm"
+  ;;
+"package-manager-version")
+  npm --version
+  ;;
+"which-self")
+  which npm
+  ;;
 "install-self")
   brew install node
   ;;

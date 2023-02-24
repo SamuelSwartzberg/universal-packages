@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null
 package_manager="$1"
 
 if [ -z "$package_manager" ]; then
-  echo "usage: upkg [<package-manager>] <subcommand> [args]"
+  echo "usage: $0 [<package-manager>] <subcommand> [args]"
   exit 1
 fi
 
@@ -18,9 +18,6 @@ case "$package_manager" in
   package_manager="git-packages"
   ;;
 "_b" | "brew")
-  package_manager="os"
-  ;;
-"apt" | "apt-get")
   package_manager="os"
   ;;
 "_p" | "pip3" | "python")
@@ -42,7 +39,7 @@ case "$package_manager" in
   package_manager="stew"
   ;;
 "lpm" | "list-package-managers")
-  echo "${package_mangagers[@]}"
+  echo "${package_mangagers[@]}" | tr ' ' '\n'
   exit 0
   ;;
 esac
@@ -52,14 +49,24 @@ package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 if [ ! -f "$package_manager_command_path" ]; then
 
   for package_manager in "${package_mangagers[@]}"; do
-    upkg "$package_manager" "$@"
+    $0 "$package_manager" "$@"
   done
   exit 0
 else
   shift
 fi
 
+function zet_diff_output() {
+  local output1 output2
+  output1="$($0 "$package_manager" ${1:?})"
+  output2="$($0 "$package_manager" ${2:?})"
+  zet diff <(echo "$output1") <(echo "$output2")
+}
+
 pkg_command() { $package_manager_command_path "$@"; }
+
+backup_file="$MDEPENDENCIES"/"$package_manager"
+
 subcommand="$1"
 shift
 
@@ -87,37 +94,47 @@ ct | "count")
 ii | "is-installed")
   pkg_command list | grep "^$1$"
   ;;
-iip | "is-installed-package-manager")
+iipm | "is-installed-package-manager")
   pkg_command list | grep -q "^$1$" && echo "$package_manager"
   ;;
 b | "backup")
-  upkg "$package_manager" added >>"$MDEPENDENCIES"/"$package_manager"
+  $0 "$package_manager" added >>"$backup_file"
   ;;
 rb | "read-backup")
-  cat "$MDEPENDENCIES"/"$package_manager"
+  cat "$backup_file" 2>/dev/null
+  ;;
+db | "delete-backup")
+  rm "$backup_file"
+  ;;
+rpb | "replace-backup")
+  $0 "$package_manager" delete-backup
+  $0 "$package_manager" backup
   ;;
 m | "missing")
-  zet diff <(upkg "$package_manager" read-backup) <(upkg "$package_manager" list)
+  zet_diff_output read-backup list
   ;;
 a | "added")
-  zet diff <(upkg "$package_manager" list) <(upkg "$package_manager" read-backup)
+  zet_diff_output list read-backup
   ;;
 d | "difference")
-  zet single <(upkg "$package_manager" read-backup) <(upkg "$package_manager" list)
+  zet single <($0 "$package_manager" read-backup) <($0 "$package_manager" list)
   ;;
 miv | "missing-installable-verbose")
-  missing_list="$(upkg "$package_manager" missing)" && exit 0
+  missing_list="$($0 "$package_manager" missing)" && exit 0
   echo "missing packages for $(tput setaf 3)$package_manager$(tput sgr0):"
   echo "$missing_list" | sed 's/^/  /'
   echo ""
   exit 1
   ;;
 im | "install-missing")
-  missing_list="$(upkg "$package_manager" missing | tr "\n" " ")"
+  missing_list="$($0 "$package_manager" missing | tr "\n" " ")"
   [ -z "$missing_list" ] || pkg_command install "$missing_list"
   ;;
 nm | "none-missing")
-  ! upkg missing-installable | grep -E "\w" >/dev/null
+  ! $0 "$package_manager" missing-installable | grep -E "\w" >/dev/null
+  ;;
+mpm | "missing-package-managers")
+  $0 "$package_manager" none-missing || echo "$package_manager"
   ;;
 i | "install")
   pkg_command install "$@"
@@ -139,5 +156,14 @@ w | "which")
   ;;
 ua | "upgrade-all")
   pkg_command upgrade-all "$@"
+  ;;
+pm | "package-manager")
+  pkg_command package-manager
+  ;;
+pmv | "package-manager-version")
+  pkg_command package-manager-version
+  ;;
+wpm | "which-package-manager")
+  pkg_command which-self
   ;;
 esac

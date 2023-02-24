@@ -28,6 +28,15 @@ case "$subcommand" in
 "upgrade-all")
   cd "$GOPATH"/bin && go get -u -- *
   ;;
+"package-manager")
+  echo "go"
+  ;;
+"package-manager-version")
+  go version | cut -d " " -f 3 | tr -d "go"
+  ;;
+"which-self")
+  which go
+  ;;
 "install-self")
   brew install go
   ;;

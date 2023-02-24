@@ -117,6 +117,15 @@ case "$subcommand" in
   chmod +x "$package_path"/"$executable_name"
   ln -sf "$package_path"/"$executable_name" "$HOMEBIN/${rename_to:-$executable_name}"
   ;;
+"package-manager")
+  echo "git-packages (no independent existence)"
+  ;;
+"package-manager-version")
+  echo "0.0.0"
+  ;;
+"which-self")
+  echo "$GIT_PACKAGES"
+  ;;
 "install-self")
   mkdir -p "$GIT_PACKAGES"
   ;;
