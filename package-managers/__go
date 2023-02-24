@@ -20,7 +20,7 @@ case "$subcommand" in
   go install $*
   ;;
 "remove")
-  go clean -i $*
+  rm "$GOPATH"/bin/"$1"
   ;;
 "upgrade")
   go get -u $*

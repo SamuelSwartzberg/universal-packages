@@ -14,7 +14,7 @@ case "$subcommand" in
   brew list --cask --versions | cut -d "," -f 1 | tr -s " " "@"
   ;;
 "which")
-  brew --prefix --cask "$1"
+  brew --prefix "$1"
   ;;
 "install")
   brew install --cask $*

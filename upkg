@@ -67,6 +67,10 @@ pkg_command() { $package_manager_command_path "$@"; }
 
 backup_file="$MDEPENDENCIES"/"$package_manager"
 
+if [ ! -f "$backup_file" ]; then
+  touch "$backup_file"
+fi
+
 subcommand="$1"
 shift
 
@@ -110,6 +114,12 @@ rpb | "replace-backup")
   $0 "$package_manager" delete-backup
   $0 "$package_manager" backup
   ;;
+rfb | "remove-from-backup")
+  $0 "$package_manager" read-backup | grep -v "^$1$" >"$backup_file"
+  ;;
+bf | "backup-file")
+  echo "$backup_file"
+  ;;
 m | "missing")
   zet_diff_output read-backup list
   ;;
@@ -141,6 +151,7 @@ i | "install")
   ;;
 r | "remove")
   pkg_command remove "$@"
+  $0 "$package_manager" remove-from-backup "$1"
   ;;
 is | "install-self")
   pkg_command install-self "$@"
