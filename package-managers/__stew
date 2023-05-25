@@ -50,4 +50,7 @@ case "$subcommand" in
 "install-self")
   brew install marwanhawari/tap/stew
   ;;
+"help")
+  stew help
+  ;;
 esac

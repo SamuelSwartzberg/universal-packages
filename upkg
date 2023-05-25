@@ -5,13 +5,12 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null
 package_manager="$1"
 
 if [ -z "$package_manager" ]; then
-  echo "usage: $0 [<package-manager>] <subcommand> [args]"
-  exit 1
+  package_manager="help" # default to help
 fi
 
 # short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
 
-package_mangagers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew" "go")
+package_managers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew" "go")
 
 case "$package_manager" in
 "gp" | "gitp" | "gitpackages" | "gpackages")
@@ -39,8 +38,11 @@ case "$package_manager" in
   package_manager="stew"
   ;;
 "lpm" | "list-package-managers")
-  echo "${package_mangagers[@]}" | tr ' ' '\n'
+  echo "${package_managers[@]}" | tr ' ' '\n'
   exit 0
+  ;;
+"h" | "help")
+  cat "$SCRIPT_DIR"/help_message
   ;;
 esac
 
@@ -48,7 +50,7 @@ package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 
 if [ ! -f "$package_manager_command_path" ]; then
 
-  for package_manager in "${package_mangagers[@]}"; do
+  for package_manager in "${package_managers[@]}"; do
     $0 "$package_manager" "$@"
   done
   exit 0
@@ -176,5 +178,8 @@ pmv | "package-manager-version")
   ;;
 wpm | "which-package-manager")
   pkg_command which-self
+  ;;
+h | "help")
+  pkg_command help
   ;;
 esac

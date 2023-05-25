@@ -40,4 +40,5 @@ case "$subcommand" in
 "install-self")
   brew install python
   ;;
+"help") ;;
 esac

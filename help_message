@@ -1,0 +1,146 @@
+
+NAME
+
+  upkg - Unified package manager command
+
+SYNOPSIS
+
+  upkg [package_manager] [subcommand] [arguments...]
+
+DESCRIPTION
+
+  upkg is a script that provides a unified interface to various package managers. It takes a package manager as its first argument, and a subcommand and further arguments as subsequent arguments.
+
+PACKAGE MANAGER
+
+  package_manager: Specify the package manager to use. Options:
+    os (_b, brew)
+    pip (_p, pip3, python)
+    cargo (_c, rust)
+    npm (_n, node)
+    git-packages (gp, gitp, gitpackages, gpackages)
+    brew-cask (bcask, b-cask)
+    brew-tap (btap, b-tap)
+    stew (_s, git-release)
+    go (no subforms)
+  If not provided, the subcommand will be run on all package managers.
+
+
+SUBCOMMANDS
+
+  Each subcommand is followed by its short form, where applicable.
+
+  echo-self (es): 
+    Prints the name of the package manager being used.
+
+  list (l): 
+    Lists all packages installed by the specified package manager.
+
+  with-version (wv): 
+    Lists packages installed with their version.
+
+  version (v): 
+    Prints the version of a specific package.
+
+  list-version (lv): 
+    Lists packages installed with their version.
+
+  count (ct): 
+    Counts the total number of installed packages.
+
+  is-installed (ii): 
+    Checks if a specific package is installed.
+
+  is-installed-package-manager (iipm): 
+    Checks if a specific package manager is installed.
+
+  backup (b): 
+    Backs up the list of installed packages.
+
+  read-backup (rb): 
+    Prints the contents of the backup file.
+
+  delete-backup (db): 
+    Deletes the backup file.
+
+  replace-backup (rpb): 
+    Replaces the current backup with a new one.
+
+  remove-from-backup (rfb): 
+    Removes a specific package from the backup file.
+
+  backup-file (bf): 
+    Prints the path to the backup file.
+
+  missing (m): 
+    Lists packages that are in the backup but not currently installed.
+
+  added (a): 
+    Lists packages that are currently installed but not in the backup.
+
+  difference (d): 
+    Shows the difference between the backup and the currently installed packages.
+
+  missing-installable-verbose (miv): 
+    Lists missing packages along with their descriptions.
+
+  install-missing (im): 
+    Installs all missing packages.
+
+  none-missing (nm): 
+    Checks if there are no missing packages.
+
+  missing-package-managers (mpm): 
+    Checks if there are any missing package managers.
+
+  install (i): 
+    Installs a specific package.
+
+  remove (r): 
+    Removes a specific package.
+
+  install-self (is): 
+    Installs the package manager itself.
+
+  upgrade (u): 
+    Upgrades a specific package.
+
+  which (w): 
+    Shows the location of a specific package.
+
+  link: 
+    Links a package.
+
+  upgrade-all (ua): 
+    Upgrades all installed packages.
+
+  package-manager (pm): 
+    Shows the package manager.
+
+  package-manager-version (pmv): 
+    Shows the version of the package manager.
+
+  which-package-manager (wpm): 
+    Shows the location of the package manager.
+
+  help (h): 
+    Shows the help message.
+
+
+EXAMPLES
+
+  List all installed packages with pip:
+
+    upkg pip list
+
+  Install a specific package with npm:
+
+    upkg npm install express
+
+  Upgrade all installed packages with os:
+
+    upkg os upgrade-all
+
+FILES
+
+  This script maintains a backup file for each specified package manager. These backup files keep track of installed packages and can be used to restore or replicate the installation on another machine. The path to the backup file for the current package manager can be displayed with the backup-file subcommand.

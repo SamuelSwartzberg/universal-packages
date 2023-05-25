@@ -129,4 +129,54 @@ case "$subcommand" in
 "install-self")
   mkdir -p "$GIT_PACKAGES"
   ;;
+"help")
+  cat <<EOF
+NAME
+
+  git-packages - a subcommand of upkg, managing git packages
+
+SYNOPSIS
+
+  upkg git-packages [subcommand] [arguments...]
+
+DESCRIPTION
+
+  git-packages is a subcommand of upkg that provides an interface to manage git packages. It takes a subcommand as its first argument, and further arguments as subsequent arguments.
+
+SUBCOMMANDS
+
+  test-existence: Checks if the GIT_PACKAGES directory exists.
+
+  list: Lists all git packages installed in the GIT_PACKAGES directory.
+
+  list-version: Lists installed git packages with their current version (commit hash).
+
+  install <package identifier|URL>: Installs a specific git package. 
+
+  remove <package identifier|URL|name>: Removes a specific git package.
+
+  upgrade <package identifier|URL|name>: Upgrades a specific git package to the latest commit on the default branch.
+
+  upgrade-all: Upgrades all installed git packages to the latest commit on their default branches.
+
+  which <package identifier|URL|name>: Returns the location of a specific git package. The argument can be a GitHub identifier, the URL, or the name of the git repository.
+
+  link <package name> [executable_name] [rename_to]: Creates a symbolic link to an executable file in the package directory. Requires the package name and optionally the executable name and a new name for the executable.
+
+  package-manager: Prints the package manager name.
+
+  package-manager-version: Prints the version of the package manager.
+
+  which-self: Returns the path to the GIT_PACKAGES directory.
+
+  install-self: Creates the GIT_PACKAGES directory if it doesn't exist.
+
+  help: Prints the help message.
+
+NOTES
+
+  version is the short hash of the current commit, since packages with actual releases and thus version are handled by stew.
+  package identifier is the GitHub identifier in the format <github username>/<repository name>.
+EOF
+  ;;
 esac
