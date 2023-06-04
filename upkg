@@ -37,6 +37,9 @@ case "$package_manager" in
 "_s" | "git-release")
   package_manager="stew"
   ;;
+"_t" | "tst" | "tester")
+  package_manager="test"
+  ;;
 "lpm" | "list-package-managers")
   echo "${package_managers[@]}" | tr ' ' '\n'
   exit 0

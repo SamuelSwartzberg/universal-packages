@@ -23,6 +23,7 @@ PACKAGE MANAGER
     brew-tap (btap, b-tap)
     stew (_s, git-release)
     go (no subforms)
+    test (_t, tst, tester)
   If not provided, the subcommand will be run on all package managers.
 
 

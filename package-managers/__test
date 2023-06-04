@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+"list")
+  ls "$XDG_DATA_HOME"/upkg/test/packages
+  ;;
+"list-version")
+  # iterate through all packages and append the version to the package name, then print
+  for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
+    echo "$(basename "$package")@$(cat "$package")"
+  done
+  ;;
+"which")
+  ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  ;;
+"install")
+  touch "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  ;;
+"remove")
+  rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  ;;
+"upgrade")
+  # take the version from the package file, then increment the patch version by 1
+  version="$(cat "$XDG_DATA_HOME"/upkg/test/packages/"$1")"
+  patch_version="$(echo "$version" | cut -d "." -f 3)"
+  new_patch_version="$((patch_version + 1))"
+  new_version="$(echo "$version" | sed "s/$patch_version$/$new_patch_version/")"
+  echo "$new_version" >"$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  ;;
+"upgrade-all")
+  # iterate through all packages and increment the patch version by 1
+  for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
+    upkg test upgrade "$(basename "$package")"
+  done
+  ;;
+"test-existence")
+  [[ -d "$XDG_DATA_HOME"/upkg/test/packages ]] || exit 1
+  ;;
+"package-manager")
+  echo "test"
+  ;;
+"package-manager-version")
+  echo "1.0.0"
+  ;;
+"which-self")
+  echo "$XDG_DATA_HOME"/upkg/test/packages
+  ;;
+"install-self")
+  mkdir -p "$XDG_DATA_HOME"/upkg/test/packages
+  ;;
+"help") ;;
+esac
