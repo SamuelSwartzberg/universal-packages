@@ -17,7 +17,7 @@ case "$subcommand" in
   ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"
   ;;
 "install")
-  touch "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  echo "0.0.1" >"$XDG_DATA_HOME"/upkg/test/packages/"$1"
   ;;
 "remove")
   rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"
