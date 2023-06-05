@@ -92,21 +92,21 @@ lv | "list-version")
   pkg_command list-version "$@"
   ;;
 lvpm | "list-version-package-manager")
-  list_version="$(upkg "$package_manager" list-version)"
+  list_version="$($0 "$package_manager" list-version)"
   sed -e "s/^/$package_manager:/" <<<"$list_version"
   ;;
 lwpm | "list-with-package-manager")
-  list="$(upkg "$package_manager" list)"
+  list="$($0 "$package_manager" list)"
   sed -e "s/^/$package_manager:/" <<<"$list"
   ;;
 wv | "with-version")
   pkg_command list-version | grep "$1"
   ;;
 wvpm | "with-version-package-manager")
-  pkg_command list-version-package-manager | grep "$1"
+  $0 "$package_manager" list-version-package-manager | grep "$1"
   ;;
 wwpm | "with-package-manager")
-  pkg_command list-with-package-manager | grep "$1"
+  $0 "$package_manager" list-with-package-manager | grep "$1"
   ;;
 v | "version")
   $0 "$package_manager" with-version "$@" | cut -d'@' -f2
