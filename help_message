@@ -40,11 +40,23 @@ SUBCOMMANDS
   with-version (wv): 
     Lists packages installed with their version.
 
+  with-version-package-manager (wvpm): 
+    Lists packages installed with their version and the package manager that installed them.
+
+  with-package-manager (wwpm): 
+    Lists packages installed with the package manager that installed them. Double w because wpm is already taken.
+
   version (v): 
     Prints the version of a specific package.
 
   list-version (lv): 
     Lists packages installed with their version.
+
+  list-version-package-manager (lvpm):
+    Lists packages installed with their version and the package manager that installed them.
+
+  list-with-package-manager (lpm): 
+    Lists packages installed with the package manager that installed them.
 
   count (ct): 
     Counts the total number of installed packages.
@@ -53,7 +65,7 @@ SUBCOMMANDS
     Checks if a specific package is installed.
 
   is-installed-package-manager (iipm): 
-    Checks if a specific package manager is installed.
+    Prints the package manager that installed a specific package.
 
   backup (b): 
     Backs up the list of installed packages.
