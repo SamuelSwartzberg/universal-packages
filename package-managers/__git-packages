@@ -68,6 +68,8 @@ case "$subcommand" in
         ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
       elif [[ -f ./Makefile ]]; then
         ask "Makefile found, run make?" N && make install
+      elif [[ -f ./build.zig ]]; then
+        ask "build.zig found, run zig build?" N && zig build install --prefix "$HOME/.local"
       else
         ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && upkg git-packages link "$package_name"
       fi
