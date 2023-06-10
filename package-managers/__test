@@ -5,35 +5,55 @@ shift
 
 case "$subcommand" in
 "list")
-  ls "$XDG_DATA_HOME"/upkg/test/packages
+  # Only list the basename, which is the package name
+  for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
+    basename "$package" | cut -d'@' -f1
+  done
   ;;
 "list-version")
-  # iterate through all packages and append the version to the package name, then print
   for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
-    echo "$(basename "$package")@$(cat "$package")"
+    basename "$package"
   done
   ;;
 "which")
-  ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  package="$(cut -d "@" -f 1 <<<"$1")"
+  version="$(cut -d "@" -f 2 <<<"$1")"
+  if [[ -z "$version" ]]; then
+    ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"@*@default
+  else
+    ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  fi
   ;;
 "install")
-  echo "0.0.1" >"$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  package="$(cut -d "@" -f 1 <<<"$1")"
+  version="$(cut -d "@" -f 2 <<<"$1")"
+  if [[ -z "$version" ]]; then
+    version="0.0.1@default"
+  fi
+  touch "$XDG_DATA_HOME/upkg/test/packages/$package@$version"
   ;;
 "remove")
-  rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  package="$(cut -d "@" -f 1 <<<"$1")"
+  version="$(cut -d "@" -f 2 <<<"$1")"
+  if [[ -z "$version" ]]; then
+    rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"@*@default
+  else
+    rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  fi
   ;;
-"upgrade")
+"upgrade") # upgrading only works on default packages
   # take the version from the package file, then increment the patch version by 1
-  version="$(cat "$XDG_DATA_HOME"/upkg/test/packages/"$1")"
+  version="$(basename "$XDG_DATA_HOME"/upkg/test/packages/"$1"*"@default" | cut -d "@" -f 2)"
   patch_version="$(echo "$version" | cut -d "." -f 3)"
   new_patch_version="$((patch_version + 1))"
   new_version="$(echo "$version" | sed "s/$patch_version$/$new_patch_version/")"
-  echo "$new_version" >"$XDG_DATA_HOME"/upkg/test/packages/"$1"
+  touch "$XDG_DATA_HOME/upkg/test/packages/$1@$new_version@default"
+  rm "$XDG_DATA_HOME"/upkg/test/packages/"$1@$version@default"
   ;;
 "upgrade-all")
-  # iterate through all packages and increment the patch version by 1
-  for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
-    upkg test upgrade "$(basename "$package")"
+  # iterate through all default packages and increment the patch version by 1
+  for package in "$XDG_DATA_HOME"/upkg/test/packages/*@default; do
+    upkg test upgrade "$(basename "$package" | cut -d'@' -f1)"
   done
   ;;
 "test-existence")

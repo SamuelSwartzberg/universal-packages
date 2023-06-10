@@ -17,13 +17,13 @@ case "$subcommand" in
   echo "$GOPATH"/bin/"$1"
   ;;
 "install")
-  go install $*
+  go install "$1"
   ;;
 "remove")
   rm "$GOPATH"/bin/"$1"
   ;;
 "upgrade")
-  go get -u $*
+  go get -u "$1"
   ;;
 "upgrade-all")
   cd "$GOPATH"/bin && go get -u -- *

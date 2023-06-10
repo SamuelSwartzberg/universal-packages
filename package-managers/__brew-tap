@@ -17,10 +17,10 @@ case "$subcommand" in
   exit 0 # no which for brew tap
   ;;
 "install")
-  brew tap $*
+  brew tap "$1"
   ;;
 "remove")
-  brew untap $*
+  brew untap "$1"
   ;;
 "upgrade")
   exit 0 # no upgrade for brew tap

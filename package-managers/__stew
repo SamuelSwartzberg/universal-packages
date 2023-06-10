@@ -27,13 +27,13 @@ case "$subcommand" in
   ls "/Users/sam/.local/share/stew/pkg/$package_id/"*
   ;;
 "install")
-  stew install "$package_id" $*
+  stew install "$package_id" "$1"
   ;;
 "remove")
-  stew uninstall "$package_id" $*
+  stew uninstall "$package_id" "$1"
   ;;
 "upgrade")
-  stew upgrade "$package_id" $*
+  stew upgrade "$package_id" "$1"
   ;;
 "upgrade-all")
   stew upgrade --all

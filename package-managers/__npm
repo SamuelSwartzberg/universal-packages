@@ -17,13 +17,13 @@ case "$subcommand" in
   $0 list-version | grep "$1"
   ;;
 "install")
-  npm install -g $*
+  npm install -g "$1"
   ;;
 "remove")
-  npm uninstall -g $*
+  npm uninstall -g "$1"
   ;;
 "upgrade")
-  npm update -g $*
+  npm update -g "$1"
   ;;
 "upgrade-all")
   npx npm-check --global --update-all

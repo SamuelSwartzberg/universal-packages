@@ -14,13 +14,13 @@ case "$subcommand" in
   pip3 show "$1" | grep Location | cut -d " " -f 2
   ;;
 "install")
-  pip3 install $*
+  pip3 install "${1//@/==}"
   ;;
 "remove")
-  pip3 uninstall $*
+  pip3 uninstall "${1//@/==}"
   ;;
 "upgrade")
-  pipupgrade $*
+  pipupgrade "$1"
   ;;
 "upgrade-all")
   pipupgrade

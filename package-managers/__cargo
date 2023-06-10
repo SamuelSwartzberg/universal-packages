@@ -3,6 +3,17 @@
 subcommand="$1"
 shift
 
+function transform_version() {
+  input="$1"
+  if echo "$input" | grep -q "@"; then
+    name=$(echo "$input" | cut -d'@' -f1)
+    version=$(echo "$input" | cut -d'@' -f2)
+    echo "--version $version $name"
+  else
+    echo "$input"
+  fi
+}
+
 case "$subcommand" in
 "test-existence")
   cargo
@@ -14,16 +25,16 @@ case "$subcommand" in
   cut -f 1-2 --delimiter="|" <(cargo install-update --list | tail --lines=+4 | head --lines=-2 | sed -E 's/ +/|/g') | tr -d v | tr "|" "@"
   ;;
 "which")
-  echo "$CARGO_BIN"/$1
+  echo "$CARGO_BIN"/"$1"
   ;;
 "install")
-  cargo install $*
+  cargo install "$(transform_version "$1")"
   ;;
 "remove")
-  cargo uninstall $*
+  cargo uninstall "$(transform_version "$1")"
   ;;
 "upgrade")
-  cargo install-update $*
+  cargo install-update $1
   ;;
 "upgrade-all")
   cargo install-update -a

@@ -17,13 +17,13 @@ case "$subcommand" in
   brew --prefix "$1"
   ;;
 "install")
-  brew install --cask $*
+  brew install --cask "$1"
   ;;
 "remove")
-  brew uninstall --cask $*
+  brew uninstall --cask "$1"
   ;;
 "upgrade")
-  brew upgrade --cask $*
+  brew upgrade --cask "$1"
   ;;
 "upgrade-all")
   brew upgrade --cask

@@ -53,14 +53,19 @@ case "$subcommand" in
   ;;
 "install")
   (
+    package="$(cut -d "@" -f 1 <<<"$1")"
+    version="$(cut -d "@" -f 2 <<<"$1")"
     cd "$GIT_PACKAGES" || exit 1
-    package_name="$(get_package_name_from_anything "${1:?}")"
+    package_name="$(get_package_name_from_anything "${package:?}")"
     if [[ -d "$package_name" ]]; then
       echo "package already installed: $package_name"
       exit 1
     fi
-    git clone "$(get_git_url_from_package_identifier_or_url "${1:?}")" || exit 1
+    git clone "$(get_git_url_from_package_identifier_or_url "${package:?}")" || exit 1
     cd "$package_name" || exit 1
+    if [[ -n "$version" ]]; then
+      git checkout "$version" || exit 1
+    fi
     (
       if [[ -f ./install.sh ]]; then
         ./install.sh

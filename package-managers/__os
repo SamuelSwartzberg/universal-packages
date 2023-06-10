@@ -17,13 +17,13 @@ case "$subcommand" in
   brew --prefix "$1"
   ;;
 "install")
-  brew install $*
+  brew install "$1"
   ;;
 "remove")
-  brew uninstall $*
+  brew uninstall "$1"
   ;;
 "upgrade")
-  brew upgrade $*
+  brew upgrade "$1"
   ;;
 "upgrade-all")
   brew upgrade

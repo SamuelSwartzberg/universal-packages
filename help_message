@@ -139,6 +139,9 @@ SUBCOMMANDS
   help (h): 
     Shows the help message.
 
+ARGUMENTS
+
+  Where applicable, a package with a certain version can be installed by using the syntax package@version.
 
 EXAMPLES
 
