@@ -10,7 +10,7 @@ fi
 
 # short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
 
-package_managers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew" "go")
+package_managers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "stew" "go" "test")
 
 case "$package_manager" in
 "gp" | "gitp" | "gitpackages" | "gpackages")
