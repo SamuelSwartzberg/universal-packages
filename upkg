@@ -85,11 +85,14 @@ case "$subcommand" in
 es | "echo-self")
   echo "$package_manager"
   ;;
-l | "list") # should list one package per line, with no other output
+l | "list")
   pkg_command list
   ;;
 lv | "list-version")
   pkg_command list-version "$@"
+  ;;
+lnv | "list-no-version")
+  pkg_command list_version "$@" | cut -d'@' -f1 | sort | uniq
   ;;
 lvpm | "list-version-package-manager")
   list_version="$($0 "$package_manager" list-version)"

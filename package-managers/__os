@@ -8,7 +8,7 @@ case "$subcommand" in
   brew help || exit 1
   ;;
 "list")
-  brew list --formula $*
+  brew list --formula
   ;;
 "list-version")
   brew list --formula --versions | cut -d "," -f 1 | tr -s " " "@"

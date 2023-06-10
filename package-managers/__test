@@ -5,9 +5,16 @@ shift
 
 case "$subcommand" in
 "list")
-  # Only list the basename, which is the package name
+  # For default packages, only list the package name, for packages installed with a version, list the package name and version
   for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
-    basename "$package" | cut -d'@' -f1
+    package_name="$(basename "$package" | cut -d "@" -f 1)"
+    version="$(basename "$package" | cut -d "@" -f 2)"
+    default="$(basename "$package" | cut -d "@" -f 3)"
+    if [[ "$default" == "default" ]]; then
+      echo "$package_name"
+    else
+      echo "$package_name@$version"
+    fi
   done
   ;;
 "list-version")

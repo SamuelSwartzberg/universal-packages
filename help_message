@@ -35,7 +35,10 @@ SUBCOMMANDS
     Prints the name of the package manager being used.
 
   list (l): 
-    Lists all packages installed by the specified package manager.
+    Lists all packages installed by the specified package manager. Will include a version if manually installed with a certain version, and without one otherwise.
+
+  list-no-version (lnv): 
+    Lists all packages installed by the specified package manager without a version.
 
   with-version (wv): 
     Lists packages installed with their version.
