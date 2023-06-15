@@ -89,10 +89,10 @@ l | "list")
   pkg_command list
   ;;
 lv | "list-version")
-  pkg_command list-version "$@"
+  pkg_command list-version
   ;;
 lnv | "list-no-version")
-  pkg_command list_version "$@" | cut -d'@' -f1 | sort | uniq
+  pkg_command list-version | cut -d'@' -f1 | sort | uniq
   ;;
 lvpm | "list-version-package-manager")
   list_version="$($0 "$package_manager" list-version)"
@@ -120,7 +120,7 @@ ct | "count")
 ii | "is-installed")
   pkg_command list | grep "^$1$"
   ;;
-iipm | "is-installed-package-manager")
+ipm | "installed-package-manager")
   pkg_command list | grep -q "^$1$" && echo "$package_manager"
   ;;
 b | "backup")
@@ -159,13 +159,17 @@ miv | "missing-installable-verbose")
   exit 1
   ;;
 im | "install-missing")
-  missing_list="$($0 "$package_manager" missing | tr "\n" " ")"
-  [ -z "$missing_list" ] || pkg_command install "$missing_list"
+  missing_list="$($0 "$package_manager" missing)"
+  if [ -n "$missing_list" ]; then
+    for package in $missing_list; do
+      $0 "$package_manager" install "$package"
+    done
+  fi
   ;;
 nm | "none-missing")
   ! $0 "$package_manager" missing-installable | grep -E "\w" >/dev/null
   ;;
-mpm | "missing-package-managers")
+mpm | "missing-package-manager")
   $0 "$package_manager" none-missing || echo "$package_manager"
   ;;
 i | "install")

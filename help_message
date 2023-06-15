@@ -67,7 +67,7 @@ SUBCOMMANDS
   is-installed (ii): 
     Checks if a specific package is installed.
 
-  is-installed-package-manager (iipm): 
+  installed-package-manager (ipm): 
     Prints the package manager that installed a specific package.
 
   backup (b): 
@@ -106,8 +106,8 @@ SUBCOMMANDS
   none-missing (nm): 
     Checks if there are no missing packages.
 
-  missing-package-managers (mpm): 
-    Checks if there are any missing package managers.
+  missing-package-manager (mpm): 
+    Prints whether the package manager
 
   install (i): 
     Installs a specific package.
