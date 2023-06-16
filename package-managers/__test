@@ -9,8 +9,7 @@ case "$subcommand" in
   for package in "$XDG_DATA_HOME"/upkg/test/packages/*; do
     package_name="$(basename "$package" | cut -d "@" -f 1)"
     version="$(basename "$package" | cut -d "@" -f 2)"
-    default="$(basename "$package" | cut -d "@" -f 3)"
-    if [[ "$default" == "default" ]]; then
+    if echo "$package" | grep -q "@default$"; then
       echo "$package_name"
     else
       echo "$package_name@$version"
@@ -25,7 +24,7 @@ case "$subcommand" in
 "which")
   package="$(cut -d "@" -f 1 <<<"$1")"
   version="$(cut -d "@" -f 2 <<<"$1")"
-  if [[ -z "$version" ]]; then
+  if ! echo "$1" | grep -q "@"; then
     ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"@*@default
   else
     ls "$XDG_DATA_HOME"/upkg/test/packages/"$1"
@@ -34,7 +33,7 @@ case "$subcommand" in
 "install")
   package="$(cut -d "@" -f 1 <<<"$1")"
   version="$(cut -d "@" -f 2 <<<"$1")"
-  if [[ -z "$version" ]]; then
+  if ! echo "$1" | grep -q "@"; then
     version="0.0.1@default"
   fi
   touch "$XDG_DATA_HOME/upkg/test/packages/$package@$version"
@@ -42,7 +41,7 @@ case "$subcommand" in
 "remove")
   package="$(cut -d "@" -f 1 <<<"$1")"
   version="$(cut -d "@" -f 2 <<<"$1")"
-  if [[ -z "$version" ]]; then
+  if ! echo "$1" | grep -q "@"; then
     rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"@*@default
   else
     rm "$XDG_DATA_HOME"/upkg/test/packages/"$1"

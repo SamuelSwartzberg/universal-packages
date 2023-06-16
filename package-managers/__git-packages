@@ -63,7 +63,7 @@ case "$subcommand" in
     fi
     git clone "$(get_git_url_from_package_identifier_or_url "${package:?}")" || exit 1
     cd "$package_name" || exit 1
-    if [[ -n "$version" ]]; then
+    if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
     (
@@ -82,7 +82,7 @@ case "$subcommand" in
   )
   ;;
 "remove")
-  rm -rf "$(get_package_path "$1"))"
+  rm -rf "$(get_package_path "$1")"
   ;;
 "upgrade")
   (
@@ -101,6 +101,9 @@ case "$subcommand" in
     cd "$GIT_PACKAGES" || exit 1
     if [[ -d "$package_name" ]]; then
       get_package_path "$package_name"
+    else
+      echo "package not installed: $package_name" >&2
+      exit 1
     fi
   )
   ;;
