@@ -32,9 +32,13 @@ function get_package_identifier_from_package_name() {
 }
 
 function get_package_path() {
-  local package_name
-  package_name="$(get_package_name_from_anything "${1:?}")"
-  echo "${GIT_PACKAGES:?}/${package_name:?}"
+  local package_identifier
+  if echo "${1:?}" | grep -q /; then # is a package identifier
+    package_identifier="$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
+    echo "${GIT_PACKAGES:?}/${package_identifier:?}"
+  else # is a package name, so we need to use `find` to get the package identifier
+    find "${GIT_PACKAGES:?}" -type d -name "${1:?}" -print -quit
+  fi
 }
 
 case "$subcommand" in
@@ -42,70 +46,88 @@ case "$subcommand" in
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
-  for package in "$GIT_PACKAGES"/*; do
-    get_package_identifier_from_package_name "$package"
+  for owner in "$GIT_PACKAGES"/*; do
+    for package in "$owner"/*; do
+      echo "$owner/$package"
+    done
   done
   ;;
 "list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `stew`
-  for package in "$GIT_PACKAGES"/*; do
-    echo "$(get_package_identifier_from_package_name "$package")@$(cd "$package" && git rev-parse --short HEAD)"
+  for owner in "$GIT_PACKAGES"/*; do
+    for package in "$owner"/*; do
+      (
+        cd "$package" || exit 1
+        echo "$owner/$package@$(git rev-parse --short HEAD)"
+      )
+    done
   done
   ;;
 "install")
   (
     package="$(cut -d "@" -f 1 <<<"$1")"
     version="$(cut -d "@" -f 2 <<<"$1")"
+    package_identifier="$(get_package_identifier_from_url_or_package_identifier "${package:?}")"
     cd "$GIT_PACKAGES" || exit 1
-    package_name="$(get_package_name_from_anything "${package:?}")"
-    if [[ -d "$package_name" ]]; then
-      echo "package already installed: $package_name"
+    if [[ -d "$package_identifier" ]]; then
+      echo "package already installed: $package_identifier"
       exit 1
     fi
-    git clone "$(get_git_url_from_package_identifier_or_url "${package:?}")" || exit 1
-    cd "$package_name" || exit 1
+    mkdir -p "$(dirname "$package_identifier")"
+    git clone "$(get_git_url_from_package_identifier_or_url "${package:?}")" "$package_identifier" || exit 1
+    cd "$package_identifier" || exit 1
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    (
-      if [[ -f ./install.sh ]]; then
-        ./install.sh
-      elif [[ -x ./"$package_name" ]]; then
-        ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
-      elif [[ -f ./Makefile ]]; then
-        ask "Makefile found, run make?" N && make install
-      elif [[ -f ./build.zig ]]; then
-        ask "build.zig found, run zig build?" N && zig build install --prefix "$HOME/.local"
-      else
-        ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && upkg git-packages link "$package_name"
-      fi
-    )
+    upkg git-packages build "$package_identifier"
   )
   ;;
 "remove")
-  rm -rf "$(get_package_path "$1")"
+  package_path="$(get_package_path "$1")"
+  if [[ -d "$package_path" ]]; then
+    rm -rf "$package_path"
+  else
+    echo "package not installed: $package_path" >&2
+    exit 1
+  fi
   ;;
 "upgrade")
-  (
-    cd "$(get_package_path "$1")" &&
-      git pull
-  )
+  package_path="$(get_package_path "$1")"
+  if [[ -d "$package_path" ]]; then
+    (cd "$package_path" && git pull)
+  else
+    echo "package not installed: $package_path" >&2
+    exit 1
+  fi
   ;;
 "upgrade-all")
-  for package in "$GIT_PACKAGES"/*; do
+  for package in "$GIT_PACKAGES"/*/*; do
     (cd "$package" && git pull)
   done
   ;;
 "which")
   (
-    package_name="$(get_package_name_from_anything "${1:?}")"
-    cd "$GIT_PACKAGES" || exit 1
-    if [[ -d "$package_name" ]]; then
-      get_package_path "$package_name"
+    package_path="$(get_package_path "${1:?}")"
+    if [[ -d "$package_path" ]]; then
+      echo "$package_path"
     else
-      echo "package not installed: $package_name" >&2
+      echo "package not installed: $package_path" >&2
       exit 1
     fi
   )
+  ;;
+"build")
+  package_path="$(get_package_path "$1")"
+  if [[ -f ./install.sh ]]; then
+    ./install.sh
+  elif [[ -x ./"$package_name" ]]; then
+    ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
+  elif [[ -f ./Makefile ]]; then
+    ask "Makefile found, run make?" N && make install
+  elif [[ -f ./build.zig ]]; then
+    ask "build.zig found, run zig build?" N && zig build install --prefix "$HOME/.local"
+  else
+    ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && upkg git-packages link "$package_name"
+  fi
   ;;
 "link") # args: package_name, executable_name, rename_to (optional)
   if [[ -z "$1" ]]; then
