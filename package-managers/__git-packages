@@ -4,31 +4,33 @@ subcommand="$1"
 shift
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
-# package identifier = <github username>/<package name>
+# package identifier = <host>/<github username>/<package name>
 # package url = https://github.com/<package identifier>[.git]
 
-function get_package_name_from_anything() {
-  basename "${1:?}" ".git"
-}
-
-function get_git_url_from_installed_thing() {
-  local package_name
-  package_name="$(get_package_name_from_anything "${1:?}")"
-  (
-    cd "${GIT_PACKAGES:?}/${package_name:?}" && { git config --get remote.origin.url || echo "package has no remote url: ${package_name:?}"; }
-  )
+function get_hostname_from_url_or_package_identifier() {
+  local input="$1"
+  if [[ $input == http* ]]; then
+    echo "${input#https://}" | cut -d '/' -f 1
+  elif [[ $input == */*/* ]]; then
+    echo "$input" | cut -d '/' -f 1
+  else
+    echo "github.com"
+  fi
 }
 
 function get_git_url_from_package_identifier_or_url() {
-  echo "https://github.com/$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
+  local hostname="$(get_hostname_from_url_or_package_identifier "$1")"
+  echo "https://${hostname}/$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
 }
+
 
 function get_package_identifier_from_url_or_package_identifier() {
-  echo "${1/https:\/\/github.com\//}" | sed 's/\.git//'
-}
-
-function get_package_identifier_from_package_name() {
-  get_package_identifier_from_url_or_package_identifier "$(get_git_url_from_installed_thing "${1:?}")"
+  local input="$1"
+  local hostname="$(get_hostname_from_url_or_package_identifier "$input")"
+  input="${input#https://}"
+  input="${input#"$hostname"/}"
+  input="${input%.git}"
+  echo "$input"
 }
 
 function get_package_path() {
@@ -46,19 +48,23 @@ case "$subcommand" in
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
-  for owner in "$GIT_PACKAGES"/*; do
-    for package in "$owner"/*; do
-      echo "$owner/$package"
+  for hostname in "$GIT_PACKAGES"/*; do
+    for owner in "$hostname"/*; do
+      for package in "$owner"/*; do
+        echo "$hostname/$owner/$package"
+      done
     done
   done
   ;;
 "list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `stew`
-  for owner in "$GIT_PACKAGES"/*; do
-    for package in "$owner"/*; do
-      (
-        cd "$package" || exit 1
-        echo "$owner/$package@$(git rev-parse --short HEAD)"
-      )
+  for hostname in "$GIT_PACKAGES"/*; do
+    for owner in "$hostname"/*; do
+      for package in "$owner"/*; do
+        (
+          cd "$package" || exit 1
+          echo "$hostname/$owner/$package@$(git rev-parse --short HEAD)"
+        )
+      done
     done
   done
   ;;
@@ -100,7 +106,7 @@ case "$subcommand" in
   fi
   ;;
 "upgrade-all")
-  for package in "$GIT_PACKAGES"/*/*; do
+  for package in "$GIT_PACKAGES"/*/*/*; do
     (cd "$package" && git pull)
   done
   ;;
@@ -117,9 +123,11 @@ case "$subcommand" in
   ;;
 "build")
   package_path="$(get_package_path "$1")"
+  package_name="$(basename "$package_path")"
+  cd "$package_path" || exit 1
   if [[ -f ./install.sh ]]; then
     ./install.sh
-  elif [[ -x ./"$package_name" ]]; then
+  elif [[ -x /"$package_name" ]]; then
     ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
   elif [[ -f ./Makefile ]]; then
     ask "Makefile found, run make?" N && make install
@@ -191,7 +199,7 @@ SUBCOMMANDS
 
   upgrade-all: Upgrades all installed git packages to the latest commit on their default branches.
 
-  which <package identifier|URL|name>: Returns the location of a specific git package. The argument can be a GitHub identifier, the URL, or the name of the git repository.
+  which <package identifier|URL|name>: Returns the location of a specific git package. The argument can be a package identifier, the URL, or the name of the git repository.
 
   link <package name> [executable_name] [rename_to]: Creates a symbolic link to an executable file in the package directory. Requires the package name and optionally the executable name and a new name for the executable.
 
@@ -208,7 +216,7 @@ SUBCOMMANDS
 NOTES
 
   version is the short hash of the current commit, since packages with actual releases and thus version are handled by stew.
-  package identifier is the GitHub identifier in the format <github username>/<repository name>.
+  package identifier is the package identifier in the format <username>/<repository name>.
 EOF
   ;;
 esac
