@@ -4,7 +4,7 @@ subcommand="$1"
 shift
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
-# package identifier = <host>/<github username>/<package name>
+# package identifier = <github username>/<package name>
 # package url = https://github.com/<package identifier>[.git]
 
 function get_hostname_from_url_or_package_identifier() {
@@ -18,26 +18,27 @@ function get_hostname_from_url_or_package_identifier() {
   fi
 }
 
-function get_git_url_from_package_identifier_or_url() {
-  local hostname="$(get_hostname_from_url_or_package_identifier "$1")"
-  echo "https://${hostname}/$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
+function get_git_url_from_any() {
+  echo "https://$(get_host_package_identifier_from_any "${1:?}")"
 }
 
 
-function get_package_identifier_from_url_or_package_identifier() {
+function get_host_package_identifier_from_any() {
   local input="$1"
-  local hostname="$(get_hostname_from_url_or_package_identifier "$input")"
   input="${input#https://}"
-  input="${input#"$hostname"/}"
   input="${input%.git}"
-  echo "$input"
+  if [[ $input == */*/* ]]; then
+    echo "$input" 
+  else
+    echo "github.com/$input"
+  fi
 }
 
 function get_package_path() {
-  local package_identifier
+  local host_package_identifier
   if echo "${1:?}" | grep -q /; then # is a package identifier
-    package_identifier="$(get_package_identifier_from_url_or_package_identifier "${1:?}")"
-    echo "${GIT_PACKAGES:?}/${package_identifier:?}"
+    host_package_identifier="$(get_host_package_identifier_from_any "${1:?}")"
+    echo "${GIT_PACKAGES:?}/${host_package_identifier:?}"
   else # is a package name, so we need to use `find` to get the package identifier
     find "${GIT_PACKAGES:?}" -type d -name "${1:?}" -print -quit
   fi
@@ -48,21 +49,21 @@ case "$subcommand" in
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
-  for hostname in "$GIT_PACKAGES"/*; do
-    for owner in "$hostname"/*; do
-      for package in "$owner"/*; do
-        echo "$hostname/$owner/$package"
+  for hostnamepath in "$GIT_PACKAGES"/*; do
+    for ownerpath in "$hostnamepath"/*; do
+      for packagepath in "$ownerpath"/*; do
+        echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
       done
     done
   done
   ;;
 "list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `stew`
-  for hostname in "$GIT_PACKAGES"/*; do
-    for owner in "$hostname"/*; do
-      for package in "$owner"/*; do
+  for hostnamepath in "$GIT_PACKAGES"/*; do
+    for ownerpath in "$hostnamepath"/*; do
+      for packagepath in "$ownerpath"/*; do
         (
-          cd "$package" || exit 1
-          echo "$hostname/$owner/$package@$(git rev-parse --short HEAD)"
+          cd "$packagepath" || exit 1
+          echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")@$(git rev-parse --short HEAD)"
         )
       done
     done
@@ -72,19 +73,19 @@ case "$subcommand" in
   (
     package="$(cut -d "@" -f 1 <<<"$1")"
     version="$(cut -d "@" -f 2 <<<"$1")"
-    package_identifier="$(get_package_identifier_from_url_or_package_identifier "${package:?}")"
+    host_package_identifier="$(get_host_package_identifier_from_any "${package:?}")"
     cd "$GIT_PACKAGES" || exit 1
-    if [[ -d "$package_identifier" ]]; then
-      echo "package already installed: $package_identifier"
+    if [[ -d "$host_package_identifier" ]]; then
+      echo "package already installed: $host_package_identifier"
       exit 1
     fi
-    mkdir -p "$(dirname "$package_identifier")"
-    git clone "$(get_git_url_from_package_identifier_or_url "${package:?}")" "$package_identifier" || exit 1
-    cd "$package_identifier" || exit 1
+    mkdir -p "$(dirname "$host_package_identifier")"
+    git clone "$(get_git_url_from_any "${package:?}")" "$host_package_identifier" || exit 1
+    cd "$host_package_identifier" || exit 1
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    upkg git-packages build "$package_identifier"
+    upkg git-packages build "$host_package_identifier"
   )
   ;;
 "remove")
