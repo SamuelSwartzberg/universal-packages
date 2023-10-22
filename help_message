@@ -34,6 +34,9 @@ SUBCOMMANDS
   echo-self (es): 
     Prints the name of the package manager being used.
 
+  listable-name (ln):
+    Prints the name of the package that is used in the list and backup subcommands.
+
   list (l): 
     Lists all packages installed by the specified package manager. Will include a version if manually installed with a certain version, and without one otherwise.
 

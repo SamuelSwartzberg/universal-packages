@@ -85,6 +85,14 @@ case "$subcommand" in
 es | "echo-self")
   echo "$package_manager"
   ;;
+ln | "listable-name")
+  lnres="$(pkg_command listable-name "$1")"
+  if [ -z "$lnres" ]; then
+    echo "$1"
+  else
+    echo "$lnres"
+  fi
+  ;;
 l | "list")
   pkg_command list
   ;;
@@ -103,13 +111,16 @@ lwpm | "list-with-package-manager")
   sed -e "s/^/$package_manager:/" <<<"$list"
   ;;
 wv | "with-version")
-  pkg_command list-version | grep "$1"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  pkg_command list-version | grep "$listable_name"
   ;;
 wvpm | "with-version-package-manager")
-  $0 "$package_manager" list-version-package-manager | grep "$1"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  $0 "$package_manager" list-version-package-manager | grep "$listable_name"
   ;;
 wwpm | "with-package-manager")
-  $0 "$package_manager" list-with-package-manager | grep "$1"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  $0 "$package_manager" list-with-package-manager | grep "$listable_name"
   ;;
 v | "version")
   $0 "$package_manager" with-version "$@" | cut -d'@' -f2
@@ -118,10 +129,12 @@ ct | "count")
   pkg_command list | wc -l
   ;;
 ii | "is-installed")
-  pkg_command list | grep "^$1$"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  pkg_command list | grep "^$listable_name$" 
   ;;
 ipm | "installed-package-manager")
-  pkg_command list | grep -q "^$1$" && echo "$package_manager"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  pkg_command list | grep -q "^$listable_name$" && echo "$package_manager"
   ;;
 b | "backup")
   $0 "$package_manager" added >>"$backup_file"
@@ -137,7 +150,11 @@ rpb | "replace-backup")
   $0 "$package_manager" backup
   ;;
 rfb | "remove-from-backup")
-  $0 "$package_manager" read-backup | grep -v "^$1$" >"$backup_file"
+  listable_name="$($0 "$package_manager" listable-name "$1")"
+  echo "removing $listable_name from backup"
+  rfbres="$($0 "$package_manager" read-backup)"
+  echo "$rfbres"
+  echo "$rfbres" | grep -Fxv "$listable_name" >"$backup_file"
   ;;
 bf | "backup-file")
   echo "$backup_file"

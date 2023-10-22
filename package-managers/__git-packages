@@ -69,12 +69,16 @@ case "$subcommand" in
     done
   done
   ;;
+"listable-name")
+  get_host_package_identifier_from_any "$1"
+  ;;
 "install")
   (
     package="$(cut -d "@" -f 1 <<<"$1")"
     version="$(cut -d "@" -f 2 <<<"$1")"
     host_package_identifier="$(get_host_package_identifier_from_any "${package:?}")"
     cd "$GIT_PACKAGES" || exit 1
+    echo "Cloning package repository $host_package_identifier ..."
     if [[ -d "$host_package_identifier" ]]; then
       echo "package already installed: $host_package_identifier"
       exit 1
@@ -85,11 +89,12 @@ case "$subcommand" in
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    upkg git-packages build "$host_package_identifier"
+    $0 build "$host_package_identifier"
   )
   ;;
 "remove")
   package_path="$(get_package_path "$1")"
+  echo "Removing package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     rm -rf "$package_path"
   else
@@ -99,6 +104,7 @@ case "$subcommand" in
   ;;
 "upgrade")
   package_path="$(get_package_path "$1")"
+  echo "Upgrading package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git pull)
   else
@@ -125,7 +131,7 @@ case "$subcommand" in
 "build")
   package_path="$(get_package_path "$1")"
   package_name="$(basename "$package_path")"
-  cd "$package_path" || exit 1
+  cd "$package_path" || { echo "$package_path doesn't exist, exiting..." >&2; exit 1; }
   if [[ -f ./install.sh ]]; then
     ./install.sh
   elif [[ -x /"$package_name" ]]; then
@@ -191,6 +197,8 @@ SUBCOMMANDS
   list: Lists all git packages installed in the GIT_PACKAGES directory.
 
   list-version: Lists installed git packages with their current version (commit hash).
+
+  listable-name: Gets the name of a package as used in \`list\` and related commands.
 
   install <package identifier|URL>: Installs a specific git package. 
 
