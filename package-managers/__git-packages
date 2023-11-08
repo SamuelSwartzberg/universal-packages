@@ -5,7 +5,7 @@ shift
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
 # package identifier = <github username>/<package name>
-# package url = https://github.com/<package identifier>[.git]
+# host-package identifier = <hostname>/<package identifier>
 
 function get_hostname_from_url_or_package_identifier() {
   local input="$1"
@@ -104,17 +104,23 @@ case "$subcommand" in
   ;;
 "upgrade")
   package_path="$(get_package_path "$1")"
+  host_package_identifier="$(get_host_package_identifier_from_any "$1")"
   echo "Upgrading package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git pull)
+    ask "Do you want to rebuild the package $host_package_identifier?" Y && $0 build "$host_package_identifier"
   else
     echo "package not installed: $package_path" >&2
     exit 1
   fi
   ;;
 "upgrade-all")
-  for package in "$GIT_PACKAGES"/*/*/*; do
-    (cd "$package" && git pull)
+   for hostnamepath in "$GIT_PACKAGES"/*; do
+    for ownerpath in "$hostnamepath"/*; do
+      for packagepath in "$ownerpath"/*; do
+        $0 upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
+      done
+    done
   done
   ;;
 "which")
@@ -131,17 +137,159 @@ case "$subcommand" in
 "build")
   package_path="$(get_package_path "$1")"
   package_name="$(basename "$package_path")"
-  cd "$package_path" || { echo "$package_path doesn't exist, exiting..." >&2; exit 1; }
-  if [[ -f ./install.sh ]]; then
-    ./install.sh
-  elif [[ -x /"$package_name" ]]; then
-    ask "executable found with same name as package, link?" N && upkg git-packages link "$package_name" "$package_name"
-  elif [[ -f ./Makefile ]]; then
-    ask "Makefile found, run make?" N && make install
-  elif [[ -f ./build.zig ]]; then
-    ask "build.zig found, run zig build?" N && zig build install --prefix "$HOME/.local"
+  host_package_identifier="$(get_host_package_identifier_from_any "$1")"
+  echo "Building package $host_package_identifier ..."
+  install_script_path="$XDG_DATA_HOME/upkg/git-packages/install/$host_package_identifier"
+  if [[ -f "$install_script_path" ]]; then
+    echo "Install script found, running..."
+    chmod +x "$install_script_path"
+    "$install_script_path"
   else
-    ask "package has no install script or makefile: $1, do you want to link an executable instead?" N && upkg git-packages link "$package_name"
+    echo "Generating install script..."
+    [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+    [[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+
+    # Check for files and store them in arrays
+    package_executable=""
+    build_zig=""
+    declare -a makefiles
+    declare -a install_scripts
+
+    [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+    [[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+    for file in GNUmakefile makefile Makefile; do
+      [[ -f "$package_path/$file" ]] && makefiles+=("$file")
+    done
+    for file in "$package_path"/install*; do
+      [[ -f "$file" ]] && install_scripts+=("$file")
+    done
+
+    # Generate hint text dynamically
+    link_hint=$([[ -n "$package_executable" ]] && echo "(executable with same name as package found)")
+    zig_hint=$([[ -n "$build_zig" ]] && echo "(build.zig found)" || echo "(no build.zig found!)")
+    make_hint=$([[ ${#makefiles[@]} -gt 0 ]] && echo "(makefiles found: ${makefiles[*]})")
+    install_script_hint=$([[ ${#install_scripts[@]} -gt 0 ]] && echo "(install scripts found: ${install_scripts[*]})")
+
+    while true; do
+      # Ask user for install strategy
+      echo "Select install strategy:"
+      PS3="Enter choice: " # Prompt for the select command
+      options=(
+        "none"
+        "link $link_hint"
+        "zig $zig_hint"
+        "install-script $install_script_hint"
+        "make $make_hint"
+        "run a custom script"
+      )
+      select message in "${options[@]}"; do
+        if [[ -n $strategy_choice ]]; then
+          # Get the one-based index of the choice
+          strategy_choice=$(($REPLY))
+          ask "You chose $strategy_choice) $message, is that correct?" Y && break 2
+        else
+          echo "Invalid choice. Please try again."
+        fi
+      done
+    done
+
+    install_code="#!/usr/bin/env bash\n\n"
+    skip_edit=false
+
+    case "$strategy_choice" in
+      "1") # none
+        echo "Don't install anything. Empty script generated. Done, exiting..."
+        skip_edit=true
+        ;;
+      "2") # link
+        if [[ -n "$package_executable" ]]; then
+          if ask "Executable with same name as package found. Do you want to link it?" Y; then
+            read -rp "Rename to (optional, leave empty to not rename): " rename_to
+            target="$HOMEBIN/${rename_to:-$package_name}"
+            install_code+="ln -sf \"$package_path/$package_executable\" \"$target\"\n"
+            install_code+="chmod +x \"$target\"\n"
+          fi
+        fi
+        if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" Y; then
+          # Loop to select executables
+          while true; do
+            PS3="Select a file to link:"
+            IFS=$'\n' read -r -d '' -a options < <(tree "$package_path" -L 3 -i --noreport && printf '\0')
+            select linkme in "${options[@]}"; do
+              [[ -n "$linkme" ]] && break
+            done
+            read -rp "Rename to (optional, leave empty to not rename): " rename_to
+            target="$HOMEBIN/${rename_to:-$linkme}"
+            install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
+            install_code+="chmod +x \"$target\"\n"
+            ask "Do you want to link something else?" N || break
+          done
+        fi
+        ;;
+      "3") # zig
+        read -rp "Additional build args (optional, leave empty to not use any): " build_args
+        install_code+="zig build install --prefix \"$HOME/.local\" $build_args\n"
+        ;;
+      "4") # install-script
+        # Loop to select install scripts
+        if [[ "${#install_scripts[@]}" -gt 0 ]]; then
+          if ask "Install scripts found. Do you want to run them?" Y; then
+            for script in "${install_scripts[@]}"; do
+              read -rp "Additional args for $script (optional): " args
+              install_code+="$script $args\n"
+            done
+          fi
+        fi
+        if [[ "${#install_scripts[@]}" -eq 0 ]] || ask "Do you want to run a custom script?" Y; then
+          # Loop to select install scripts
+          while true; do
+            PS3="Select a script to run:"
+            IFS=$'\n' read -r -d '' -a options < <(tree "$package_path" -L 3 -i --noreport && printf '\0')
+            select script in "${options[@]}"; do
+              [[ -n "$script" ]] && break
+            done
+            read -rp "Additional args (optional): " args
+            install_code+="chmod +x \"$package_path/$script\"\n"
+            install_code+="$package_path/$script $args\n"
+            ask "Do you want to run something else?" N || break
+          done
+        fi
+        ;;
+      "5") # make
+        # if there is only one makefile, use it
+        makefile=""
+        if [[ ${#makefiles[@]} -eq 1 ]]; then
+          makefile="${makefiles[0]}"
+        else
+          # select makefile
+          echo "Select a makefile to use:"
+          select selectedmakefile in "${makefiles[@]}"; do
+            makefile="$selectedmakefile"
+            break
+          done
+        fi
+        install_code+="make -C \"$package_path\" -f \"$makefile\" install\n"
+        ;;
+      "6") # run
+        # No additional code needed
+        ;;
+    esac
+
+
+    # Save generated install script
+    mkdir -p "$(dirname "$install_script_path")"
+    echo -e "$install_code" > "$install_script_path"
+    chmod +x "$install_script_path"
+    if [[ "$skip_edit" = true ]]; then
+      exit 0
+    fi
+
+    # Ask user to edit the install script
+    ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
+
+    # Run the install script
+    "$install_script_path"
+
   fi
   ;;
 "link") # args: package_name, executable_name, rename_to (optional)
