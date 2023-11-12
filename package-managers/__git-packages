@@ -36,7 +36,11 @@ function get_host_package_identifier_from_any() {
 }
 
 function get_package_path() {
-  find "$GIT_PACKAGES" -type d -path "*/$1" -print -quit
+  local input="$1"
+  input="${input#https://}"
+  input="${input%.git}"
+  input="${input%/}"
+  find "$GIT_PACKAGES" -type d -path "*/${input:?}" -print -quit
 }
 
 case "$subcommand" in
@@ -233,6 +237,7 @@ case "$subcommand" in
           if ask "Install scripts found. Do you want to add them to the main install script?" Y; then
             for script in "${install_scripts[@]}"; do
               read -rp "Additional args for $script (optional): " args
+              install_code+="chmod +x \"$script\"\n"
               install_code+="$script $args\n"
             done
           fi
