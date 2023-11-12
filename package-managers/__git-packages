@@ -203,7 +203,7 @@ case "$subcommand" in
         ;;
       "2") # link
         if [[ -n "$package_executable" ]]; then
-          if ask "Executable with same name as package found. Do you want to link it?" Y; then
+          if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
             target="$HOMEBIN/${rename_to:-$package_name}"
             install_code+="ln -sf \"$package_path/$package_executable\" \"$target\"\n"
@@ -230,14 +230,14 @@ case "$subcommand" in
       "4") # install-script
         # Loop to select install scripts
         if [[ "${#install_scripts[@]}" -gt 0 ]]; then
-          if ask "Install scripts found. Do you want to run them?" Y; then
+          if ask "Install scripts found. Do you want to add them to the main install script?" Y; then
             for script in "${install_scripts[@]}"; do
               read -rp "Additional args for $script (optional): " args
               install_code+="$script $args\n"
             done
           fi
         fi
-        if [[ "${#install_scripts[@]}" -eq 0 ]] || ask "Do you want to run a custom script?" Y; then
+        if [[ "${#install_scripts[@]}" -eq 0 ]] || ask "Do you want to add a/another script to the main install script?" N; then
           # Loop to select install scripts
           while true; do
             echo "Select a script to run:"
