@@ -339,6 +339,7 @@ case "$subcommand" in
       fi
     done
 
+    mkdir -p "$(upgrade_build_strategy_path "$host_package_identifier")"
     echo "$strategy_choice" > "$(upgrade_build_strategy_path "$host_package_identifier")"
   fi
   chmod +x "$install_script_path"
