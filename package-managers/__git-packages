@@ -27,21 +27,16 @@ function get_host_package_identifier_from_any() {
   local input="$1"
   input="${input#https://}"
   input="${input%.git}"
-  if [[ $input == */*/* ]]; then
+  input="${input%/}"
+  if [[ $input == */*/* ]]; then # already a host package identifier
     echo "$input" 
   else
-    echo "github.com/$input"
+    get_package_path "$input" | rev | cut -d '/' -f 1-3 | rev
   fi
 }
 
 function get_package_path() {
-  local host_package_identifier
-  if echo "${1:?}" | grep -q /; then # is a package identifier
-    host_package_identifier="$(get_host_package_identifier_from_any "${1:?}")"
-    echo "${GIT_PACKAGES:?}/${host_package_identifier:?}"
-  else # is a package name, so we need to use `find` to get the package identifier
-    find "${GIT_PACKAGES:?}" -type d -name "${1:?}" -print -quit
-  fi
+  find "$GIT_PACKAGES" -type d -path "*/$1" -print -quit
 }
 
 case "$subcommand" in
@@ -135,7 +130,7 @@ case "$subcommand" in
   )
   ;;
 "build")
-  package_path="$(get_package_path "$1")"
+  package_path="$(get_package_path "${1:?}")"
   package_name="$(basename "$package_path")"
   host_package_identifier="$(get_host_package_identifier_from_any "$1")"
   echo "Building package $host_package_identifier ..."
@@ -219,7 +214,7 @@ case "$subcommand" in
           # Loop to select executables
           while true; do
             echo "Select a file to link:"
-            linkme=$(tree "$package_path" -L 3 -i --noreport | fzf --prompt="Select a file to link: ")
+            linkme=$(tree "$package_path" -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ")
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
             target="$HOMEBIN/${rename_to:-$linkme}"
             install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
@@ -246,7 +241,7 @@ case "$subcommand" in
           # Loop to select install scripts
           while true; do
             echo "Select a script to run:"
-            script=$(tree "$package_path" -L 3 -i --noreport | fzf --prompt="Select a script to run: ")
+            script=$(tree "$package_path" -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: ")
             read -rp "Additional args (optional): " args
             install_code+="chmod +x \"$package_path/$script\"\n"
             install_code+="$package_path/$script $args\n"
