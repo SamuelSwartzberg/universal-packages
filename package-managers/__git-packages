@@ -214,7 +214,7 @@ case "$subcommand" in
           # Loop to select executables
           while true; do
             echo "Select a file to link:"
-            linkme=$(tree "$package_path" -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ")
+            linkme=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
             target="$HOMEBIN/${rename_to:-$linkme}"
             install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
@@ -241,7 +241,7 @@ case "$subcommand" in
           # Loop to select install scripts
           while true; do
             echo "Select a script to run:"
-            script=$(tree "$package_path" -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: ")
+            script=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: " ) )
             read -rp "Additional args (optional): " args
             install_code+="chmod +x \"$package_path/$script\"\n"
             install_code+="$package_path/$script $args\n"
