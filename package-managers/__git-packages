@@ -173,30 +173,35 @@ case "$subcommand" in
     while true; do
       # Ask user for install strategy
       echo "Select install strategy:"
-      PS3="Enter choice: " # Prompt for the select command
       options=(
-        "none"
-        "link $link_hint"
-        "zig $zig_hint"
-        "install-script $install_script_hint"
-        "make $make_hint"
-        "run a custom script"
+        "1) none"
+        "2) link $link_hint"
+        "3) build with zig $zig_hint"
+        "4) run install script $install_script_hint"
+        "5) make $make_hint"
+        "6) run a custom script"
       )
-      select message in "${options[@]}"; do
-        if [[ -n $strategy_choice ]]; then
-          # Get the one-based index of the choice
-          strategy_choice=$(($REPLY))
-          ask "You chose $strategy_choice) $message, is that correct?" Y && break 2
-        else
-          echo "Invalid choice. Please try again."
-        fi
-      done
+      strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: ")
+      if [[ -z "$strategy_choice" ]]; then
+        ask "No choice made. Do you want to cancel & exit?" Y && exit 1
+      else
+        ask "You chose $strategy_choice, is that correct?" Y && break 2
+      fi
     done
+
+    # Check if the user made a choice
+    if [[ -z "$strategy_choice" ]]; then
+      echo "No choice made. Exiting..."
+      exit 1
+    fi
+
+    # Extract the strategy index from the choice
+    strategy_index=$(printf '%s\n' "${options[@]}" | grep -nxF "$strategy_choice" | cut -d: -f1)
 
     install_code="#!/usr/bin/env bash\n\n"
     skip_edit=false
 
-    case "$strategy_choice" in
+    case "$strategy_index" in
       "1") # none
         echo "Don't install anything. Empty script generated. Done, exiting..."
         skip_edit=true
@@ -213,11 +218,8 @@ case "$subcommand" in
         if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" Y; then
           # Loop to select executables
           while true; do
-            PS3="Select a file to link:"
-            IFS=$'\n' read -r -d '' -a options < <(tree "$package_path" -L 3 -i --noreport && printf '\0')
-            select linkme in "${options[@]}"; do
-              [[ -n "$linkme" ]] && break
-            done
+            echo "Select a file to link:"
+            linkme=$(tree "$package_path" -L 3 -i --noreport | fzf --prompt="Select a file to link: ")
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
             target="$HOMEBIN/${rename_to:-$linkme}"
             install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
@@ -243,11 +245,8 @@ case "$subcommand" in
         if [[ "${#install_scripts[@]}" -eq 0 ]] || ask "Do you want to run a custom script?" Y; then
           # Loop to select install scripts
           while true; do
-            PS3="Select a script to run:"
-            IFS=$'\n' read -r -d '' -a options < <(tree "$package_path" -L 3 -i --noreport && printf '\0')
-            select script in "${options[@]}"; do
-              [[ -n "$script" ]] && break
-            done
+            echo "Select a script to run:"
+            script=$(tree "$package_path" -L 3 -i --noreport | fzf --prompt="Select a script to run: ")
             read -rp "Additional args (optional): " args
             install_code+="chmod +x \"$package_path/$script\"\n"
             install_code+="$package_path/$script $args\n"
