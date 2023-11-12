@@ -43,6 +43,10 @@ function get_package_path() {
   find "$GIT_PACKAGES" -type d -path "*/${input:?}" -print -quit
 }
 
+function upgrade_build_strategy_path() {
+  echo "$XDG_DATA_HOME/upkg/git-packages/run-on-upgrade/$(get_host_package_identifier_from_any "${1:?}")"
+}
+
 case "$subcommand" in
 "test-existence")
   [[ -d "$GIT_PACKAGES" ]] || exit 1
@@ -107,7 +111,38 @@ case "$subcommand" in
   echo "Upgrading package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git pull)
-    ask "Do you want to rebuild the package $host_package_identifier?" Y && $0 build "$host_package_identifier"
+
+    if [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]]; then
+      upgrade_strategy="$(cat "$(upgrade_build_strategy_path "$host_package_identifier")")"
+    else
+      echo "No upgrade strategy found. Default to 'always'"
+      upgrade_strategy="always"
+    fi
+
+    should_run=false
+
+    case "$upgrade_strategy" in
+      "always")
+        should_run=true
+        ;;
+      "ask-yes")
+        ask "Do you want to run the install script?" Y && should_run=true
+        ;;
+      "ask-no")
+        ask "Do you want to run the install script?" N && should_run=true
+        ;;
+      "never")
+        should_run=false
+        ;;
+      *)
+        echo "Unknown upgrade strategy: $upgrade_strategy" >&2
+        exit 1
+        ;;
+    esac
+
+    if [[ "$should_run" = true ]]; then
+      $0 build "$host_package_identifier"
+    fi
   else
     echo "package not installed: $package_path" >&2
     exit 1
@@ -140,9 +175,7 @@ case "$subcommand" in
   echo "Building package $host_package_identifier ..."
   install_script_path="$XDG_DATA_HOME/upkg/git-packages/install/$host_package_identifier"
   if [[ -f "$install_script_path" ]]; then
-    echo "Install script found, running..."
-    chmod +x "$install_script_path"
-    "$install_script_path"
+    echo "Install script found."
   else
     echo "Generating install script..."
     [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
@@ -274,11 +307,10 @@ case "$subcommand" in
         ;;
     esac
 
-
     # Save generated install script
     mkdir -p "$(dirname "$install_script_path")"
     echo -e "$install_code" > "$install_script_path"
-    chmod +x "$install_script_path"
+   
     if [[ "$skip_edit" = true ]]; then
       exit 0
     fi
@@ -286,10 +318,32 @@ case "$subcommand" in
     # Ask user to edit the install script
     ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
 
-    # Run the install script
-    "$install_script_path"
-
   fi
+  
+  # Ask user what strategy we should choose when upgrading: always, ask-yes, ask-no, never
+
+  if ! [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]]; then
+    while true; do
+      echo "Select upgrade strategy:"
+      options=(
+        "1) always"
+        "2) ask-yes"
+        "3) ask-no"
+        "4) never"
+      )
+      strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: " | cut -d ' ' -f '2-')
+      if [[ -z "$strategy_choice" ]]; then
+        ask "No choice made. Do you want to cancel & exit?" Y && exit 1
+      else
+        ask "You chose $strategy_choice, is that correct?" Y && break 2
+      fi
+    done
+
+    echo "$strategy_choice" > "$(upgrade_build_strategy_path "$host_package_identifier")"
+  fi
+  chmod +x "$install_script_path"
+  # Run the install script
+  "$install_script_path"
   ;;
 "link") # args: package_name, executable_name, rename_to (optional)
   if [[ -z "$1" ]]; then
