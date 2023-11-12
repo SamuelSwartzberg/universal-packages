@@ -319,10 +319,10 @@ case "$subcommand" in
     ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
 
   fi
-  
+
   # Ask user what strategy we should choose when upgrading: always, ask-yes, ask-no, never
 
-  if ! [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]]; then
+  if ! [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]] && ask "Do you want to set an upgrade strategy?" Y; then
     while true; do
       echo "Select upgrade strategy:"
       options=(
