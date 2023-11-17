@@ -4,8 +4,12 @@ subcommand="$1"
 shift
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
+
+
+GIT_PACKAGES_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/git-packages"
+
 GIT_PACKAGES="$HOME/.local/git_packages"
-# should be GIT_PACKAGES="$XDG_DATA_HOME/upkg/git-packages/packages"
+# should be GIT_PACKAGES="$GIT_PACKAGES_HOME/packages"
 # the above path is legacy and will be migrated in the future
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
@@ -25,7 +29,7 @@ function get_hostname_from_url_or_package_identifier() {
 }
 
 function upgrade_build_strategy_path() {
-  echo "$XDG_DATA_HOME/upkg/git-packages/run-on-upgrade/$("$SCRIPT_DIR"/../lib/host-package-ident "${1:?}")"
+  echo "$GIT_PACKAGES_DATA_HOME/run-on-upgrade/$(host-package-ident "${1:?}")"
 }
 
 case "$subcommand" in
@@ -41,7 +45,7 @@ case "$subcommand" in
     done
   done
   ;;
-"list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `stew`
+"list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `upkg gh`
   for hostnamepath in "$GIT_PACKAGES"/*; do
     for ownerpath in "$hostnamepath"/*; do
       for packagepath in "$ownerpath"/*; do
@@ -54,13 +58,13 @@ case "$subcommand" in
   done
   ;;
 "listable-name")
-  "$SCRIPT_DIR"/../lib/host-package-ident "$1"
+  host-package-ident "$1"
   ;;
 "install")
   (
     package="$(cut -d "@" -f 1 <<<"$1")"
     version="$(cut -d "@" -f 2 <<<"$1")"
-    host_package_identifier="$("$SCRIPT_DIR"/../lib/host-package-ident "${package:?}")"
+    host_package_identifier="$(host-package-ident "${package:?}")"
     cd "$GIT_PACKAGES" || exit 1
     echo "Cloning package repository $host_package_identifier ..."
     if [[ -d "$host_package_identifier" ]]; then
@@ -68,16 +72,16 @@ case "$subcommand" in
       exit 1
     fi
     mkdir -p "$(dirname "$host_package_identifier")"
-    git clone "$("$SCRIPT_DIR"/../lib/git-remote-url "${package:?}")" "$host_package_identifier" || exit 1
+    git clone "$(git-remote-url "${package:?}")" "$host_package_identifier" || exit 1
     cd "$host_package_identifier" || exit 1
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    $0 build "$host_package_identifier"
+    "$0" build "$host_package_identifier"
   )
   ;;
 "remove")
-  package_path="$("$SCRIPT_DIR"/../lib/package-path "$1")"
+  package_path="$(package-path "$1")"
   echo "Removing package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     rm -rf "$package_path"
@@ -87,42 +91,14 @@ case "$subcommand" in
   fi
   ;;
 "upgrade")
-  package_path="$("$SCRIPT_DIR"/../lib/package-path "$1")"
-  host_package_identifier="$("$SCRIPT_DIR"/../lib/host-package-ident "$1")"
+  package_path="$(package-path "$1")"
+  host_package_identifier="$(host-package-ident "$1")"
   echo "Upgrading package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git checkout -- . && git pull) || exit 1
 
-    if [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]]; then
-      upgrade_strategy="$(cat "$(upgrade_build_strategy_path "$host_package_identifier")")"
-    else
-      echo "No upgrade strategy found. Default to 'always'"
-      upgrade_strategy="always"
-    fi
-
-    should_run=false
-
-    case "$upgrade_strategy" in
-      "always")
-        should_run=true
-        ;;
-      "ask-yes")
-        ask "Do you want to run the install script?" Y && should_run=true
-        ;;
-      "ask-no")
-        ask "Do you want to run the install script?" N && should_run=true
-        ;;
-      "never")
-        should_run=false
-        ;;
-      *)
-        echo "Unknown upgrade strategy: $upgrade_strategy" >&2
-        exit 1
-        ;;
-    esac
-
-    if [[ "$should_run" = true ]]; then
-      $0 build "$host_package_identifier"
+    if should-upgrade git-packages "$host_package_identifier"; then
+      "$0" build "$host_package_identifier"
     fi
   else
     echo "package not installed: $package_path" >&2
@@ -133,14 +109,14 @@ case "$subcommand" in
    for hostnamepath in "$GIT_PACKAGES"/*; do
     for ownerpath in "$hostnamepath"/*; do
       for packagepath in "$ownerpath"/*; do
-        $0 upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
+        "$0" upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
       done
     done
   done
   ;;
 "which")
   (
-    package_path="$("$SCRIPT_DIR"/../lib/package-path "${1:?}")"
+    package_path="$(package-path "${1:?}")"
     if [[ -d "$package_path" ]]; then
       echo "$package_path"
     else
@@ -150,11 +126,11 @@ case "$subcommand" in
   )
   ;;
 "build")
-  package_path="$("$SCRIPT_DIR"/../lib/package-path "${1:?}")"
+  package_path="$(package-path "${1:?}")"
   package_name="$(basename "$package_path")"
-  host_package_identifier="$("$SCRIPT_DIR"/../lib/host-package-ident "$1")"
+  host_package_identifier="$(host-package-ident "$1")"
   echo "Building package $host_package_identifier ..."
-  install_script_path="$XDG_DATA_HOME/upkg/git-packages/install/$host_package_identifier"
+  install_script_path="$GIT_PACKAGES_DATA_HOME/install/$host_package_identifier"
   if [[ -f "$install_script_path" ]]; then
     echo "Install script found."
   else
@@ -328,22 +304,10 @@ case "$subcommand" in
   "$install_script_path"
   ;;
 "delete-install-script")
-  host_package_identifier="$("$SCRIPT_DIR"/../lib/host-package-ident "$1")"
-  install_script_path="$XDG_DATA_HOME/upkg/git-packages/install/$host_package_identifier"
-  if [[ -f "$install_script_path" ]]; then
-    rm "$install_script_path"
-  else
-    echo "No install script found for $host_package_identifier"
-  fi
+  remove-metadata git-packages install "$(host-package-ident "$1")"
   ;;
 "delete-upgrade-strategy")
-  host_package_identifier="$("$SCRIPT_DIR"/../lib/host-package-ident "$1")"
-  upgrade_strategy_path="$(upgrade_build_strategy_path "$host_package_identifier")"
-  if [[ -f "$upgrade_strategy_path" ]]; then
-    rm "$upgrade_strategy_path"
-  else
-    echo "No upgrade strategy found for $host_package_identifier"
-  fi
+  remove-metadata git-packages run-on-upgrade "$(host-package-ident "$1")"
   ;;
 "rebuild")
   "$0" delete-install-script "$1"

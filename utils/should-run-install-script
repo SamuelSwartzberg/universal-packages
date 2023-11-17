@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+upgrade_strategy="${1?Missing upgrade strategy}"
+should_run=false
+
+case "$upgrade_strategy" in
+  "always")
+    should_run=true
+    ;;
+  "ask-yes")
+    ask "Do you want to run the install script?" Y && should_run=true
+    ;;
+  "ask-no")
+    ask "Do you want to run the install script?" N && should_run=true
+    ;;
+  "never")
+    should_run=false
+    ;;
+  *)
+    echo "Unknown upgrade strategy: $upgrade_strategy" >&2
+    exit 1
+    ;;
+esac
+
+# return
+if $should_run; then
+  exit 0
+else
+  exit 1
+fi

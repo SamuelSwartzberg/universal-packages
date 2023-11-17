@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+command="${1:?no command given}"
+type="${2:?no type given}"
+host_package_identifier="${3:?no host package identifier given}"
+
+tgtpath="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$command/$type/$host_package_identifier"
+
+if [[ -f "$tgtpath" ]]; then
+  rm "$tgtpath"
+else
+  echo "No $type item found for $host_package_identifier" >&2
+fi
