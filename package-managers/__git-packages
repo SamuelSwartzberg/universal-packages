@@ -243,7 +243,7 @@ case "$subcommand" in
           if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
             target="$HOMEBIN/${rename_to:-$package_name}"
-            install_code+="ln -sf \"$package_path/$package_executable\" \"$target\"\n"
+            install_code+="ln -sf \"$package_executable\" \"$target\"\n"
             install_code+="chmod +x \"$target\"\n"
           fi
         fi
@@ -342,7 +342,7 @@ case "$subcommand" in
     mkdir -p "$(dirname "$(upgrade_build_strategy_path "$host_package_identifier")")"
     echo "$strategy_choice" > "$(upgrade_build_strategy_path "$host_package_identifier")"
   fi
-  chmod +x "$install_script_path"
+    +x "$install_script_path"
   # Run the install script
   "$install_script_path"
   ;;
