@@ -20,7 +20,8 @@ function get_hostname_from_url_or_package_identifier() {
 }
 
 function get_git_url_from_any() {
-  local host_package_ident="$(get_host_package_identifier_from_any "${1:?}")"
+  local host_package_ident
+  host_package_ident="$(get_host_package_identifier_from_any "${1:?}")"
   if [[ $host_package_ident == *.localhost*/*/* ]]; then # for now we can be pretty sure that only .localhost domains are http
     echo "http://$host_package_ident"
   else
@@ -255,7 +256,7 @@ case "$subcommand" in
             install_code+="chmod +x \"$target\"\n"
           fi
         fi
-        if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" Y; then
+        if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
           # Loop to select executables
           while true; do
             echo "Select a file to link:"
