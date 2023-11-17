@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
+
+input="$1"
+input="${input#https://}"
+input="${input#http://}"
+input="${input%.git}"
+input="${input%/}"
+if [[ $input == */*/* ]]; then # already a host package identifier
+  echo "$input" 
+else
+  "$(dirname "$SCRIPT_DIR")"/package-path "$input" "$2" | rev | cut -d '/' -f 1-3 | rev
+fi

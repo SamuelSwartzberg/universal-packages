@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+input="$1"
+path="${2:-$GIT_PACKAGES}"
+input="${input#https://}"
+input="${input#http://}"
+input="${input%.git}"
+input="${input%/}"
+find "$path" -type d -path "*/${input:?}" -print -quit
