@@ -226,4 +226,7 @@ wpm | "which-package-manager")
 h | "help")
   pkg_command help
   ;;
+*) # passthrough case
+  pkg_command "$subcommand" "$@"
+  ;;
 esac
