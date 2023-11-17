@@ -3,6 +3,11 @@
 subcommand="$1"
 shift
 
+
+GIT_PACKAGES="$HOME/.local/git_packages"
+# should be GIT_PACKAGES="$XDG_DATA_HOME/upkg/git-packages/packages"
+# the above path is legacy and will be migrated in the future
+
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
 # package identifier = <github username>/<package name>
 # host-package identifier = <hostname>/<package identifier>
