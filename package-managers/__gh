@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+subcommand="$1"
+shift
+
+GITHUB_PACKAGES_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/gh"
+mkdir -p "$GITHUB_PACKAGES_DATA_HOME"
+GITHUB_PACKAGES="${GITHUB_PACKAGES_DATA_HOME}/packages"
+export GITHUB_PACKAGE_VERSIONS="${GITHUB_PACKAGES_DATA_HOME}/versions"
+GITHUB_PACKAGE_ASSET_PATTERNS="${GITHUB_PACKAGES_DATA_HOME}/asset-patterns"
+
+
+function get_release_version(){
+  host_package_identifier="${1:?Need host package identifier}"
+  pattern="${2:?Need pattern}"
+  fieldindex="${3:?Need field index}"
+  gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | grep -F -m 1 "${pattern}" | cut -f "$fieldindex" -d$'\t'
+}
+
+case "$subcommand" in
+"test-existence")
+  [[ -d "$GITHUB_PACKAGES/" ]] || exit 1
+  ;;
+"list")
+  for hostnamepath in "$GITHUB_PACKAGES"/*; do
+    for ownerpath in "$hostnamepath"/*; do
+      for packagepath in "$ownerpath"/*; do
+        echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
+      done
+    done
+  done
+  ;;
+"list-version") 
+  # shellcheck disable=SC2016
+  "$0" list | xargs -I {} bash -c 'echo "{}@$(cat "$GITHUB_PACKAGE_VERSIONS/{}")"'
+  ;;
+"listable-name")
+  host-package-ident "$1" "$GITHUB_PACKAGES"
+  ;;
+"install")
+  (
+    package="$(cut -d "@" -f 1 <<<"$1")"
+    version="$(cut -d "@" -f 2 <<<"$1")"
+    if [[ -z "$version" ]]; then
+      version_matcher="Latest\t"
+      fieldindex=2
+    else
+      version_matcher="${version}\t"
+      fieldindex=3
+    fi
+    host_package_identifier="$(host-package-ident "${package:?}" "$GITHUB_PACKAGES")"
+    selected_version="$(get_release_version "$host_package_identifier" "$version_matcher" "$fieldindex")"
+    if [[ -z "$selected_version" ]]; then
+      echo "Version $version not found for package $package"
+      if ask "Do you want to fzf a version instead?" Y; then
+        selected_version="$(gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | fzf | cut -f "$fieldindex" -d$'\t')"
+      else
+        exit 1
+      fi
+    fi
+    if [[ -d "$GITHUB_PACKAGES/$host_package_identifier" ]]; then
+      echo "Package $package already installed"
+      exit 1
+    else
+      mkdir -p "$GITHUB_PACKAGES/$host_package_identifier"
+    fi
+
+    gh release view -R "$host_package_identifier" "$selected_version"
+    if ask "Is this release correct?" Y; then
+      false
+    else
+      exit 1
+    fi
+    
+    if [[ -f "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier" ]]; then
+      asset_pattern="$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
+    else
+      ask "Currently, there is no asset pattern for $host_package_identifier. You will be shown a list of assets to choose from. You can edit the asset pattern afterwards. Enter to continue." Y
+      asset_selected="$(gh release view -R "$host_package_identifier" "$selected_version" --json assets | jq -r 'assets[].name' | fzf)"
+      echo "$asset_selected" > "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier"
+      ask "Do you want to edit the asset pattern now?" Y && "$EDITOR" "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier"
+      asset_pattern="$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
+    fi
+    
+    cd "$GITHUB_PACKAGES/$host_package_identifier" || exit 1
+    gh release download -R "$host_package_identifier" "$selected_version" --pattern "$asset_pattern"
+    mkdir -p "$(dirname "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier")"
+    echo "$selected_version" > "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier"
+
+    "$0" build "$host_package_identifier"
+  )
+  ;;
+"remove")
+  package_path="$(package-path "$1" "$GITHUB_PACKAGES")"
+  echo "Removing package at $package_path ..."
+  if [[ -d "$package_path" ]]; then
+    rm -rf "$package_path"
+  else
+    echo "package not installed: $package_path" >&2
+    exit 1
+  fi
+  ;;
+"upgrade")
+ ( 
+    package_path="$(package-path "$1" "$GITHUB_PACKAGES")"
+    host_package_identifier="$(host-package-ident "$1" "$GITHUB_PACKAGES")"
+    echo "Upgrading package at $package_path ..."
+    if [[ -d "$package_path" ]]; then
+      if [[ -f "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier" ]]; then
+        target_version="$(cat "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier")"
+        if [[ "$target_version" != "Latest" ]]; then
+          ask "You have installed the package at the specific version $target_version. Do you want to upgrade to the latest version instead? This will set your target version to Latest. Currently, having multiple versions of the same package installed is not supported." Y && target_version="Latest"
+          echo "$target_version" > "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier"
+        fi
+      fi
+
+      rm -r "$package_path"
+
+      cd "$GITHUB_PACKAGES/$host_package_identifier" || exit 1
+      gh release download -R "$host_package_identifier" "$target_version" --pattern "$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
+
+      if should-upgrade gh "$host_package_identifier"; then
+        "$0" build "$host_package_identifier"
+      fi
+    else
+      echo "package not installed: $package_path" >&2
+      exit 1
+    fi
+  )
+  ;;
+"upgrade-all")
+   for hostnamepath in "$GITHUB_PACKAGES"/*; do
+    for ownerpath in "$hostnamepath"/*; do
+      for packagepath in "$ownerpath"/*; do
+        "$0" upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
+      done
+    done
+  done
+  ;;
+"package-manager")
+  echo "gh (no independent existence)"
+  ;;
+"package-manager-version")
+  echo "0.0.0"
+  ;;
+"which-self")
+  echo "$GITHUB_PACKAGES"
+  ;;
+"install-self")
+  mkdir -p "$GITHUB_PACKAGES"
+  ;;
+  
+
+esac
