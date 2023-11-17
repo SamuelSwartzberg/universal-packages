@@ -355,26 +355,6 @@ case "$subcommand" in
   # Run the install script
   "$install_script_path"
   ;;
-"link") # args: package_name, executable_name, rename_to (optional)
-  if [[ -z "$1" ]]; then
-    echo "missing arguments"
-    echo "usage: upkg git-packages link package_name [executable_name]"
-    exit 1
-  fi
-  package_path="$(get_package_path "$1")"
-  executable_name="$2"
-  if [[ -z "$executable_name" ]]; then
-    executable_name="$(select dir in $(ls "$package_path"); do
-      echo "$dir"
-      break
-    done)"
-  fi
-
-  read -rp "rename to (optional): " rename_to
-
-  chmod +x "$package_path"/"$executable_name"
-  ln -sf "$package_path"/"$executable_name" "$HOMEBIN/${rename_to:-$executable_name}"
-  ;;
 "package-manager")
   echo "git-packages (no independent existence)"
   ;;
