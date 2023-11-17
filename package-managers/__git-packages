@@ -342,7 +342,7 @@ case "$subcommand" in
     mkdir -p "$(dirname "$(upgrade_build_strategy_path "$host_package_identifier")")"
     echo "$strategy_choice" > "$(upgrade_build_strategy_path "$host_package_identifier")"
   fi
-    +x "$install_script_path"
+  chmod +x "$install_script_path"
   # Run the install script
   "$install_script_path"
   ;;
