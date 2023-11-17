@@ -355,6 +355,24 @@ case "$subcommand" in
   # Run the install script
   "$install_script_path"
   ;;
+"delete-install-script")
+  host_package_identifier="$(get_host_package_identifier_from_any "$1")"
+  install_script_path="$XDG_DATA_HOME/upkg/git-packages/install/$host_package_identifier"
+  if [[ -f "$install_script_path" ]]; then
+    rm "$install_script_path"
+  else
+    echo "No install script found for $host_package_identifier"
+  fi
+  ;;
+"delete-upgrade-strategy")
+  host_package_identifier="$(get_host_package_identifier_from_any "$1")"
+  upgrade_strategy_path="$(upgrade_build_strategy_path "$host_package_identifier")"
+  if [[ -f "$upgrade_strategy_path" ]]; then
+    rm "$upgrade_strategy_path"
+  else
+    echo "No upgrade strategy found for $host_package_identifier"
+  fi
+  ;;
 "package-manager")
   echo "git-packages (no independent existence)"
   ;;
