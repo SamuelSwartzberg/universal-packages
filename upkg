@@ -4,6 +4,8 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null
 
 package_manager="$1"
 
+export PATH="$SCRIPT_DIR"/utils:"$PATH"
+
 if [ -z "$package_manager" ]; then
   package_manager="help" # default to help
 fi
