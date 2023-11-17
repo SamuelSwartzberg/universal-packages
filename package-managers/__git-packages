@@ -373,6 +373,11 @@ case "$subcommand" in
     echo "No upgrade strategy found for $host_package_identifier"
   fi
   ;;
+"rebuild")
+  "$0" delete-install-script "$1"
+  "$0" delete-upgrade-strategy "$1"
+  "$0" build "$1"
+  ;;
 "package-manager")
   echo "git-packages (no independent existence)"
   ;;
