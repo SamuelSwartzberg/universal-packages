@@ -7,8 +7,11 @@ package_name="$(basename "$package_path")"
 host_package_identifier="$(host-package-ident "$target" "$type")"
 echo "Building package $host_package_identifier for $type..."
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/upkg/$type"
+TMP_HOME="${XDG_RUNTIME_DIR:-$HOME/.tmp}/upkg/$type"
+mkdir -p "$DATA_HOME" "$CACHE_HOME" "$TMP_HOME"
 install_script_path="$DATA_HOME/install/$host_package_identifier"
-upgrade_build_strategy_path="$DATA_HOME/upgrade-build-strategy/$host_package_identifier"
+upgrade_build_strategy_path="$DATA_HOME/run-on-upgrade/$host_package_identifier"
 
 if [[ -f "$install_script_path" ]]; then
     echo "Install script found."
@@ -66,21 +69,37 @@ if [[ -f "$install_script_path" ]]; then
     # Extract the strategy index from the choice
     strategy_index=$(printf '%s\n' "${options[@]}" | grep -nxF "$strategy_choice" | cut -d: -f1)
 
-    install_code="#!/usr/bin/env bash\n\n"
+    install_code="$(
+      cat <<EOF
+#!/usr/bin/env bash
+
+# This is an auto-generated install script created by upkg for $host_package_identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
+# This file will not be regenerated unless manually deleted. Feel free to edit this file.
+
+export DATA_HOME=\"\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type\"
+export CACHE_HOME=\"\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type\"
+export TMP_HOME=\"\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type\"
+export PACKAGES_HOME=\"\${DATA_HOME}/packages\"
+export package_path_at_install='$package_path'
+export PACKAGE_NAME='$package_name'
+export HOST_PACKAGE_IDENTIFIER='$host_package_identifier'
+export PACKAGE_PATH=\"\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}\"
+
+EOF
+    )"
     skip_edit=false
 
     case "$strategy_index" in
       "1") # none
-        echo "Don't install anything. Empty script generated. Done, exiting..."
+        echo "Don't install anything. Empty script generated."
         skip_edit=true
         ;;
       "2") # link
         if [[ -n "$package_executable" ]]; then
           if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            target="$HOMEBIN/${rename_to:-$package_name}"
-            install_code+="ln -sf \"$package_executable\" \"$target\"\n"
-            install_code+="chmod +x \"$target\"\n"
+            install_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\"\n"
+            install_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\""
           fi
         fi
         if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
@@ -89,25 +108,26 @@ if [[ -f "$install_script_path" ]]; then
             echo "Select a file to link:"
             linkme=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            target="$HOMEBIN/${rename_to:-$linkme}"
-            install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
-            install_code+="chmod +x \"$target\"\n"
+            install_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\"\n"
+            install_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
             ask "Do you want to link something else?" N || break
           done
         fi
         ;;
       "3") # zig
         read -rp "Additional build args (optional, leave empty to not use any): " build_args
-        install_code+="zig build install --prefix \"$HOME/.local\" $build_args\n"
+        # shellcheck disable=SC2016 # single quotes are intentional, this should only be expanded when the script is run
+        install_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/local/bin}")" '"$build_args"'\n'
         ;;
       "4") # install-script
         # Loop to select install scripts
         if [[ "${#install_scripts[@]}" -gt 0 ]]; then
           if ask "Install scripts found. Do you want to add them to the main install script?" Y; then
             for script in "${install_scripts[@]}"; do
-              read -rp "Additional args for $script (optional): " args
-              install_code+="chmod +x \"$script\"\n"
-              install_code+="$script $args\n"
+              script_name=$(basename "$script")
+              read -rp "Additional args for $script_name (optional): " args
+              install_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+              install_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
             done
           fi
         fi
@@ -117,8 +137,8 @@ if [[ -f "$install_script_path" ]]; then
             echo "Select a script to run:"
             script=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: " ) )
             read -rp "Additional args (optional): " args
-            install_code+="chmod +x \"$package_path/$script\"\n"
-            install_code+="$package_path/$script $args\n"
+            nstall_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+            install_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
             ask "Do you want to run something else?" N || break
           done
         fi
@@ -136,7 +156,8 @@ if [[ -f "$install_script_path" ]]; then
             break
           done
         fi
-        install_code+="make -C \"$package_path\" -f \"$makefile\" install\n"
+        install_code+="export MAKEFILE=\"\${PACKAGE_PATH}/$makefile\"\n\n"
+        install_code+="make -C \"\${PACKAGE_PATH}\"  -f \"\${MAKEFILE}\" install\n"
         ;;
       "6") # run
         # No additional code needed
