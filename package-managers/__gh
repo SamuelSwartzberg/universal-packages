@@ -34,7 +34,7 @@ case "$subcommand" in
   "$0" list | xargs -I {} bash -c 'echo "{}@$(cat "$GITHUB_PACKAGE_VERSIONS/{}")"'
   ;;
 "listable-name")
-  host-package-ident "$1" "$GITHUB_PACKAGES"
+  host-package-ident "$1" gh
   ;;
 "install")
   (
@@ -94,8 +94,8 @@ case "$subcommand" in
   ;;
 "upgrade")
  ( 
-    package_path="$(package-path "$1" "$GITHUB_PACKAGES")"
-    host_package_identifier="$(host-package-ident "$1" "$GITHUB_PACKAGES")"
+    package_path="$(package-path "$1" gh)"
+    host_package_identifier="$(host-package-ident "$1" gh)"
     echo "Upgrading package at $package_path ..."
     if [[ -d "$package_path" ]]; then
       if [[ -f "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier" ]]; then
