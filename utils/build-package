@@ -147,12 +147,10 @@ if [[ -f "$install_script_path" ]]; then
     mkdir -p "$(dirname "$install_script_path")"
     echo -e "$install_code" > "$install_script_path"
    
-    if [[ "$skip_edit" = true ]]; then
-      exit 0
+    if [[ "$skip_edit" != true ]]; then
+      # Ask user to edit the install script
+      ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
     fi
-
-    # Ask user to edit the install script
-    ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
 
   fi
 
