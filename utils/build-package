@@ -90,7 +90,7 @@ export PACKAGE_PATH="\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}"
 EOF
     )"
 
-    install_code+="\n$(tree -L 3 --noreport "$package_path" | sed 's/^/# /')\n"
+    install_code+="\n$(tree -L 3 --noreport "$package_path" | sed 's/^/# /')\n\n"
 
     skip_edit=false
 
