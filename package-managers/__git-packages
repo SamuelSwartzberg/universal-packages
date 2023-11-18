@@ -86,6 +86,9 @@ case "$subcommand" in
 "delete-install-script")
   remove-metadata git-packages install "$1"
   ;;
+"edit-install-script")
+  edit-metadata git-packages install "$1"
+  ;;
 "delete-upgrade-strategy")
   remove-metadata git-packages run-on-upgrade "$1"
   ;;
