@@ -7,8 +7,9 @@ shift
 GIT_PACKAGES_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/git-packages"
 
 GIT_PACKAGES="$GIT_PACKAGES_DATA_HOME/packages"
-ln -sf "$GIT_PACKAGES" "$HOME/.local/git_packages" # legacy path
-# the above path is legacy and will be migrated in the future
+if [[ ! -d "$HOME/.local/git_packages" ]]; then
+  ln -s "$GIT_PACKAGES" "$HOME/.local/git_packages" # legacy path
+fi
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
 # package identifier = <github username>/<package name>
