@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-command="${1:?no command given}"
+command="${1:-git-packages}"
 host_package_identifier="${2:?no host package identifier given}"
 upgradepath="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$command/run-on-upgrade/$host_package_identifier"
 

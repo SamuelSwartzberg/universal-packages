@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 input="$1"
-path="${2:-$GIT_PACKAGES}"
+path="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/${2:-git-packages}/packages"
 input="${input#https://}"
 input="${input#http://}"
 input="${input%.git}"
 input="${input%/}"
-find "$path" -type d -path "*/${input:?}" -print -quit
+if [[ $input == "$path/"*/*/* ]]; then # a full path of the package
+  echo "$input"
+else
+  find "$path" -type d -path "*/${input:?}" -print -quit
+fi

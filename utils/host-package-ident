@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
-
 input="$1"
 input="${input#https://}"
 input="${input#http://}"
 input="${input%.git}"
 input="${input%/}"
-if [[ $input == */*/* ]]; then # already a host package identifier
+if [[ $input == "${XDG_DATA_HOME:-$HOME/.local/share}/upkg/${2:-git-packages}/"* ]]; then # a full path of the package
+  echo "$input" | rev | cut -d '/' -f 1-3 | rev
+elif [[ $input == */*/* ]]; then # already a host package identifier
   echo "$input" 
 else
   package-path "$input" "$2" | rev | cut -d '/' -f 1-3 | rev

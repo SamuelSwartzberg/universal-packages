@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+type="${1:?type is required}"
+shift
+command="${1:?command is required}"
+shift
+package_path="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+
+for hostnamepath in "$package_path"/*; do
+  for ownerpath in "$hostnamepath"/*; do
+    for packagepath in "$ownerpath"/*; do
+      "$0" "$command" "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")" "$@"
+    done
+  done
+done

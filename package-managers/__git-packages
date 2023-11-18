@@ -3,59 +3,34 @@
 subcommand="$1"
 shift
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
-
 
 GIT_PACKAGES_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/git-packages"
 
-GIT_PACKAGES="$HOME/.local/git_packages"
-# should be GIT_PACKAGES="$GIT_PACKAGES_HOME/packages"
+GIT_PACKAGES="$GIT_PACKAGES_DATA_HOME/packages"
+ln -sf "$GIT_PACKAGES" "$HOME/.local/git_packages" # legacy path
 # the above path is legacy and will be migrated in the future
 
 # package name = name of the repo and thus the directory in $GIT_PACKAGES
 # package identifier = <github username>/<package name>
 # host-package identifier = <hostname>/<package identifier>
 
-function get_hostname_from_url_or_package_identifier() {
-  local input="$1"
-  if [[ $input == http* ]]; then
-    input="${input#https://}"
-    echo "${input#http://}" | cut -d '/' -f 1
-  elif [[ $input == */*/* ]]; then
-    echo "$input" | cut -d '/' -f 1
-  else
-    echo "github.com"
-  fi
-}
-
-function upgrade_build_strategy_path() {
-  echo "$GIT_PACKAGES_DATA_HOME/run-on-upgrade/$(host-package-ident "${1:?}")"
-}
-
 case "$subcommand" in
 "test-existence")
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
-  for hostnamepath in "$GIT_PACKAGES"/*; do
-    for ownerpath in "$hostnamepath"/*; do
-      for packagepath in "$ownerpath"/*; do
-        echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
-      done
-    done
-  done
+  forall-packages git-packages listable-name
   ;;
 "list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `upkg gh`
-  for hostnamepath in "$GIT_PACKAGES"/*; do
-    for ownerpath in "$hostnamepath"/*; do
-      for packagepath in "$ownerpath"/*; do
-        (
-          cd "$packagepath" || exit 1
-          echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")@$(git rev-parse --short HEAD)"
-        )
-      done
-    done
-  done
+  forall-packages git-packages with-version
+  ;;
+"with-version")
+  (
+    packagepath="$(package-path "$1")"
+    host_package_identifier="$(host-package-ident "$1")"
+    cd "$packagepath" || exit 1
+    echo "$host_package_identifier@$(git rev-parse --short HEAD)"
+  )
   ;;
 "listable-name")
   host-package-ident "$1"
@@ -81,14 +56,7 @@ case "$subcommand" in
   )
   ;;
 "remove")
-  package_path="$(package-path "$1")"
-  echo "Removing package at $package_path ..."
-  if [[ -d "$package_path" ]]; then
-    rm -rf "$package_path"
-  else
-    echo "package not installed: $package_path" >&2
-    exit 1
-  fi
+  remove-package "$1" git-packages
   ;;
 "upgrade")
   package_path="$(package-path "$1")"
@@ -106,208 +74,19 @@ case "$subcommand" in
   fi
   ;;
 "upgrade-all")
-   for hostnamepath in "$GIT_PACKAGES"/*; do
-    for ownerpath in "$hostnamepath"/*; do
-      for packagepath in "$ownerpath"/*; do
-        "$0" upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
-      done
-    done
-  done
+  forall-packages git-packages upgrade
   ;;
 "which")
-  (
-    package_path="$(package-path "${1:?}")"
-    if [[ -d "$package_path" ]]; then
-      echo "$package_path"
-    else
-      echo "package not installed: $package_path" >&2
-      exit 1
-    fi
-  )
+  which-package "$1" git-packages
   ;;
 "build")
-  package_path="$(package-path "${1:?}")"
-  package_name="$(basename "$package_path")"
-  host_package_identifier="$(host-package-ident "$1")"
-  echo "Building package $host_package_identifier ..."
-  install_script_path="$GIT_PACKAGES_DATA_HOME/install/$host_package_identifier"
-  if [[ -f "$install_script_path" ]]; then
-    echo "Install script found."
-  else
-    echo "Generating install script..."
-    [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
-    [[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
-
-    # Check for files and store them in arrays
-    package_executable=""
-    build_zig=""
-    declare -a makefiles
-    declare -a install_scripts
-
-    [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
-    [[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
-    for file in GNUmakefile makefile Makefile; do
-      [[ -f "$package_path/$file" ]] && makefiles+=("$file")
-    done
-    for file in "$package_path"/install*; do
-      [[ -f "$file" ]] && install_scripts+=("$file")
-    done
-
-    # Generate hint text dynamically
-    link_hint=$([[ -n "$package_executable" ]] && echo "(executable with same name as package found)")
-    zig_hint=$([[ -n "$build_zig" ]] && echo "(build.zig found)" || echo "(no build.zig found!)")
-    make_hint=$([[ ${#makefiles[@]} -gt 0 ]] && echo "(makefiles found: ${makefiles[*]})")
-    install_script_hint=$([[ ${#install_scripts[@]} -gt 0 ]] && echo "(install scripts found: ${install_scripts[*]})")
-
-    while true; do
-      # Ask user for install strategy
-      echo "Select install strategy:"
-      options=(
-        "1) none"
-        "2) link $link_hint"
-        "3) build with zig $zig_hint"
-        "4) run install script $install_script_hint"
-        "5) make $make_hint"
-        "6) run a custom script"
-      )
-      strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: ")
-      if [[ -z "$strategy_choice" ]]; then
-        ask "No choice made. Do you want to cancel & exit?" Y && exit 1
-      else
-        ask "You chose $strategy_choice, is that correct?" Y && break 2
-      fi
-    done
-
-    # Check if the user made a choice
-    if [[ -z "$strategy_choice" ]]; then
-      echo "No choice made. Exiting..."
-      exit 1
-    fi
-
-    # Extract the strategy index from the choice
-    strategy_index=$(printf '%s\n' "${options[@]}" | grep -nxF "$strategy_choice" | cut -d: -f1)
-
-    install_code="#!/usr/bin/env bash\n\n"
-    skip_edit=false
-
-    case "$strategy_index" in
-      "1") # none
-        echo "Don't install anything. Empty script generated. Done, exiting..."
-        skip_edit=true
-        ;;
-      "2") # link
-        if [[ -n "$package_executable" ]]; then
-          if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
-            read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            target="$HOMEBIN/${rename_to:-$package_name}"
-            install_code+="ln -sf \"$package_executable\" \"$target\"\n"
-            install_code+="chmod +x \"$target\"\n"
-          fi
-        fi
-        if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
-          # Loop to select executables
-          while true; do
-            echo "Select a file to link:"
-            linkme=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
-            read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            target="$HOMEBIN/${rename_to:-$linkme}"
-            install_code+="ln -sf \"$package_path/$linkme\" \"$target\"\n"
-            install_code+="chmod +x \"$target\"\n"
-            ask "Do you want to link something else?" N || break
-          done
-        fi
-        ;;
-      "3") # zig
-        read -rp "Additional build args (optional, leave empty to not use any): " build_args
-        install_code+="zig build install --prefix \"$HOME/.local\" $build_args\n"
-        ;;
-      "4") # install-script
-        # Loop to select install scripts
-        if [[ "${#install_scripts[@]}" -gt 0 ]]; then
-          if ask "Install scripts found. Do you want to add them to the main install script?" Y; then
-            for script in "${install_scripts[@]}"; do
-              read -rp "Additional args for $script (optional): " args
-              install_code+="chmod +x \"$script\"\n"
-              install_code+="$script $args\n"
-            done
-          fi
-        fi
-        if [[ "${#install_scripts[@]}" -eq 0 ]] || ask "Do you want to add a/another script to the main install script?" N; then
-          # Loop to select install scripts
-          while true; do
-            echo "Select a script to run:"
-            script=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: " ) )
-            read -rp "Additional args (optional): " args
-            install_code+="chmod +x \"$package_path/$script\"\n"
-            install_code+="$package_path/$script $args\n"
-            ask "Do you want to run something else?" N || break
-          done
-        fi
-        ;;
-      "5") # make
-        # if there is only one makefile, use it
-        makefile=""
-        if [[ ${#makefiles[@]} -eq 1 ]]; then
-          makefile="${makefiles[0]}"
-        else
-          # select makefile
-          echo "Select a makefile to use:"
-          select selectedmakefile in "${makefiles[@]}"; do
-            makefile="$selectedmakefile"
-            break
-          done
-        fi
-        install_code+="make -C \"$package_path\" -f \"$makefile\" install\n"
-        ;;
-      "6") # run
-        # No additional code needed
-        ;;
-    esac
-
-    # Save generated install script
-    mkdir -p "$(dirname "$install_script_path")"
-    echo -e "$install_code" > "$install_script_path"
-   
-    if [[ "$skip_edit" = true ]]; then
-      exit 0
-    fi
-
-    # Ask user to edit the install script
-    ask "Install script generated. Do you want to edit the script?" N && $VISUAL "$install_script_path"
-
-  fi
-
-  # Ask user what strategy we should choose when upgrading: always, ask-yes, ask-no, never
-
-  if ! [[ -f "$(upgrade_build_strategy_path "$host_package_identifier")" ]] && ask "Do you want to set an upgrade strategy?" Y; then
-    while true; do
-      echo "Select upgrade strategy:"
-      options=(
-        "1) always"
-        "2) ask-yes"
-        "3) ask-no"
-        "4) never"
-      )
-      strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: " | cut -d ' ' -f '2-')
-      if [[ -z "$strategy_choice" ]]; then
-        ask "No choice made. Do you want to cancel & exit?" Y && exit 1
-      else
-        ask "You chose $strategy_choice, is that correct?" Y && break 2
-      fi
-    done
-
-    mkdir -p "$(dirname "$(upgrade_build_strategy_path "$host_package_identifier")")"
-    echo "$strategy_choice" > "$(upgrade_build_strategy_path "$host_package_identifier")"
-  fi
-  chmod +x "$install_script_path"
-  # Run the install script
-  "$install_script_path"
+  build-package "$1" git-packages
   ;;
 "delete-install-script")
-  remove-metadata git-packages install "$(host-package-ident "$1")"
+  remove-metadata git-packages install "$1"
   ;;
 "delete-upgrade-strategy")
-  remove-metadata git-packages run-on-upgrade "$(host-package-ident "$1")"
+  remove-metadata git-packages run-on-upgrade "$1"
   ;;
 "rebuild")
   "$0" delete-install-script "$1"
