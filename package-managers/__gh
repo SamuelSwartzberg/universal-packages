@@ -22,7 +22,7 @@ case "$subcommand" in
   [[ -d "$GITHUB_PACKAGES/" ]] || exit 1
   ;;
 "list")
-  forall-packages gh listable-name
+  forall-packages "$0" gh listable-name
   ;;
 "list-version") 
   # shellcheck disable=SC2016
@@ -116,7 +116,7 @@ case "$subcommand" in
   )
   ;;
 "upgrade-all")
-  forall-packages gh upgrade
+  forall-packages "$0" gh upgrade
   ;;
 "which")
   which-package "$1" gh

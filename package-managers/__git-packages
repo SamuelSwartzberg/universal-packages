@@ -20,10 +20,10 @@ case "$subcommand" in
   [[ -d "$GIT_PACKAGES" ]] || exit 1
   ;;
 "list")
-  forall-packages git-packages listable-name
+  forall-packages "$0" git-packages listable-name
   ;;
 "list-version") # version of a git package is the short hash of the current commit, since packages with actual releases and thus version are handled by `upkg gh`
-  forall-packages git-packages with-version
+  forall-packages "$0" git-packages with-version
   ;;
 "with-version")
   (
@@ -75,7 +75,7 @@ case "$subcommand" in
   fi
   ;;
 "upgrade-all")
-  forall-packages git-packages upgrade
+  forall-packages "$0" git-packages upgrade
   ;;
 "which")
   which-package "$1" git-packages
