@@ -44,13 +44,13 @@ SUBCOMMANDS
     Lists all packages installed by the specified package manager without a version.
 
   with-version (wv): 
-    Lists packages installed with their version.
+    Gets matching packages installed with their version.
 
   with-version-package-manager (wvpm): 
-    Lists packages installed with their version and the package manager that installed them.
+    Gets matching packages installed with their version and the package manager that installed them.
 
   with-package-manager (wwpm): 
-    Lists packages installed with the package manager that installed them. Double w because wpm is already taken.
+    Gets matching packages installed with the package manager that installed them. Double w because wpm is already taken.
 
   version (v): 
     Prints the version of a specific package.
