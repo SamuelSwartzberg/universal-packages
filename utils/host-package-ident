@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-input="$1"
+input="${1:?input is required}"
 input="${input#https://}"
 input="${input#http://}"
 input="${input%.git}"
