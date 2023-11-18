@@ -17,6 +17,11 @@ function get_release_version(){
   gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | grep -F -m 1 "${pattern}" | cut -f "$fieldindex" -d$'\t'
 }
 
+if ! command -v gh >/dev/null; then
+  echo "gh is not installed. Please install it first." >&2
+  exit 1
+fi
+
 case "$subcommand" in
 "test-existence")
   [[ -d "$GITHUB_PACKAGES/" ]] || exit 1
