@@ -77,9 +77,10 @@ case "$subcommand" in
       asset_pattern="$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
     else
       ask "Currently, there is no asset pattern for $host_package_identifier. You will be shown a list of assets to choose from. You can edit the asset pattern afterwards. Enter to continue." Y
-      asset_selected="$(gh release view -R "$host_package_identifier" "$selected_version" --json assets | jq -r 'assets[].name' | fzf)"
+      asset_selected="$(gh release view --json assets -R "$host_package_identifier" "$selected_version"  | jq -r '.assets[].name' | fzf)"
+      mkdir -p "$(dirname "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
       echo "$asset_selected" > "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier"
-      ask "Do you want to edit the asset pattern now?" Y && "$EDITOR" "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier"
+      ask "Do you want to edit the asset pattern now? The format, according to \`gh\`, must be a glob pattern." Y && "$EDITOR" "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier"
       asset_pattern="$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
     fi
     
