@@ -22,13 +22,7 @@ case "$subcommand" in
   [[ -d "$GITHUB_PACKAGES/" ]] || exit 1
   ;;
 "list")
-  for hostnamepath in "$GITHUB_PACKAGES"/*; do
-    for ownerpath in "$hostnamepath"/*; do
-      for packagepath in "$ownerpath"/*; do
-        echo "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
-      done
-    done
-  done
+  forall-packages gh listable-name
   ;;
 "list-version") 
   # shellcheck disable=SC2016
@@ -91,14 +85,7 @@ case "$subcommand" in
   )
   ;;
 "remove")
-  package_path="$(package-path "$1" "$GITHUB_PACKAGES")"
-  echo "Removing package at $package_path ..."
-  if [[ -d "$package_path" ]]; then
-    rm -rf "$package_path"
-  else
-    echo "package not installed: $package_path" >&2
-    exit 1
-  fi
+  remove-package "$1" gh
   ;;
 "upgrade")
  ( 
@@ -129,13 +116,24 @@ case "$subcommand" in
   )
   ;;
 "upgrade-all")
-   for hostnamepath in "$GITHUB_PACKAGES"/*; do
-    for ownerpath in "$hostnamepath"/*; do
-      for packagepath in "$ownerpath"/*; do
-        "$0" upgrade "$(basename "$hostnamepath")/$(basename "$ownerpath")/$(basename "$packagepath")"
-      done
-    done
-  done
+  forall-packages gh upgrade
+  ;;
+"which")
+  which-package "$1" gh
+  ;;
+"build")
+  build-package "$1" gh
+  ;;
+"delete-install-script")
+  remove-metadata gh install "$1"
+  ;;
+"delete-upgrade-strategy")
+  remove-metadata gh run-on-upgrade "$1"
+  ;;
+"rebuild")
+  "$0" delete-install-script "$1"
+  "$0" delete-upgrade-strategy "$1"
+  "$0" build "$1"
   ;;
 "package-manager")
   echo "gh (no independent existence)"
