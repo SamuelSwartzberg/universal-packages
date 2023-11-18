@@ -76,17 +76,22 @@ if [[ -f "$install_script_path" ]]; then
 # This is an auto-generated install script created by upkg for $host_package_identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
 # This file will not be regenerated unless manually deleted. Feel free to edit this file.
 
-export DATA_HOME=\"\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type\"
-export CACHE_HOME=\"\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type\"
-export TMP_HOME=\"\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type\"
-export PACKAGES_HOME=\"\${DATA_HOME}/packages\"
+export DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type"
+export CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type"
+export TMP_HOME="\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type"
+export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/local/bin}"
+export PACKAGES_HOME="\${DATA_HOME}/packages"
 export package_path_at_install='$package_path'
 export PACKAGE_NAME='$package_name'
 export HOST_PACKAGE_IDENTIFIER='$host_package_identifier'
-export PACKAGE_PATH=\"\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}\"
+export PACKAGE_PATH="\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}"
 
+# The structure of the package at install time is (provided for convenience only):
 EOF
     )"
+
+    install_code+="\n$(tree -L 3 --noreport "$package_path" | sed 's/^/# /')\n"
+
     skip_edit=false
 
     case "$strategy_index" in
