@@ -13,8 +13,7 @@ GITHUB_PACKAGE_ASSET_PATTERNS="${GITHUB_PACKAGES_DATA_HOME}/asset-patterns"
 function get_release_version(){
   host_package_identifier="${1:?Need host package identifier}"
   pattern="${2:?Need pattern}"
-  fieldindex="${3:?Need field index}"
-  gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | grep -F -m 1 "${pattern}" | cut -f "$fieldindex" -d$'\t'
+  gh release list -L 100 -R "$host_package_identifier" | tail -n +1 | grep -F -m 1 "${pattern}" | cut -f 3 -d$'\t'
 }
 
 if ! command -v gh >/dev/null; then
@@ -40,20 +39,23 @@ case "$subcommand" in
   (
     package="$(cut -d "@" -f 1 <<<"$1")"
     version="$(cut -d "@" -f 2 <<<"$1")"
-    if [[ -z "$version" ]]; then
-      version_matcher="Latest\t"
-      fieldindex=2
+    if [[ -z "$version" ]] || [[ "$version" == "$package" ]]; then
+      version_matcher="Latest	"
+      version="Latest"
     else
-      version_matcher="${version}\t"
-      fieldindex=3
+      version_matcher="${version}	"
+      mkdir -p "$(dirname "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier")"
+      echo "$version" > "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier"
     fi
-    host_package_identifier="$(host-package-ident "${package:?}" "$GITHUB_PACKAGES")"
-    selected_version="$(get_release_version "$host_package_identifier" "$version_matcher" "$fieldindex")"
+    host_package_identifier="$(host-package-ident "${package:?}" gh)"
+    selected_version="$(get_release_version "$host_package_identifier" "$version_matcher")"
     if [[ -z "$selected_version" ]]; then
       echo "Version $version not found for package $package"
       if ask "Do you want to fzf a version instead?" Y; then
         selected_version="$(gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | fzf | cut -f "$fieldindex" -d$'\t')"
       else
+        echo "Without a version, the package cannot be installed. Aborting..."
+        [ -f "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier" ] && rm "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier"
         exit 1
       fi
     fi
