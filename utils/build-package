@@ -103,6 +103,7 @@ EOF
         if [[ -n "$package_executable" ]]; then
           if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
+            install_code="[[ -L \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\"\n"
             install_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\"\n"
             install_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\""
           fi
@@ -113,6 +114,7 @@ EOF
             echo "Select a file to link:"
             linkme=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
+            install_code="[[ -L \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\"\n"
             install_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\"\n"
             install_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
             ask "Do you want to link something else?" N || break
