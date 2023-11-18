@@ -79,7 +79,7 @@ if [[ -f "$install_script_path" ]]; then
 export DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type"
 export CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type"
 export TMP_HOME="\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type"
-export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/local/bin}"
+export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
 export PACKAGES_HOME="\${DATA_HOME}/packages"
 export package_path_at_install='$package_path'
 export PACKAGE_NAME='$package_name'
@@ -103,8 +103,8 @@ EOF
         if [[ -n "$package_executable" ]]; then
           if ask "Executable with same name as package found. Do you want add linking it to the install script?" Y; then
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            install_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\"\n"
-            install_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$package_name}\"\n"
+            install_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+            install_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
             install_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\""
           fi
         fi
@@ -114,8 +114,8 @@ EOF
             echo "Select a file to link:"
             linkme=$( ( { cd "$package_path" || exit; } | tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
             read -rp "Rename to (optional, leave empty to not rename): " rename_to
-            install_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\"\n"
-            install_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/local/bin}/${rename_to:-$linkme}\"\n"
+            install_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+            install_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
             install_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
             ask "Do you want to link something else?" N || break
           done
@@ -124,7 +124,7 @@ EOF
       "3") # zig
         read -rp "Additional build args (optional, leave empty to not use any): " build_args
         # shellcheck disable=SC2016 # single quotes are intentional, this should only be expanded when the script is run
-        install_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/local/bin}")" '"$build_args"'\n'
+        install_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/.local/bin}")" '"$build_args"'\n'
         ;;
       "4") # install-script
         # Loop to select install scripts
