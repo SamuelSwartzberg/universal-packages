@@ -95,7 +95,7 @@ case "$subcommand" in
       exit 1
     }
 
-    "$0" build "$host_package_identifier"
+    run-event "$host_package_identifier" gh install
   )
   ;;
 "remove")
@@ -120,9 +120,7 @@ case "$subcommand" in
       cd "$GITHUB_PACKAGES/$host_package_identifier" || exit 1
       gh release download -R "$host_package_identifier" "$target_version" --pattern "$(cat "$GITHUB_PACKAGE_ASSET_PATTERNS/$host_package_identifier")"
 
-      if should-upgrade gh "$host_package_identifier"; then
-        "$0" build "$host_package_identifier"
-      fi
+      run-event "$host_package_identifier" gh upgrade
     else
       echo "package not installed: $package_path" >&2
       exit 1
@@ -135,25 +133,39 @@ case "$subcommand" in
 "which")
   which-package "$1" gh
   ;;
-"build")
-  build-package "$1" gh
+ch|"create-hook")
+   create-hook "$1" gh "$2"
   ;;
-"delete-install-script")
-  remove-metadata gh install "$1"
+chss|"create-hook-and-set-strategy")
+  create-hook-and-set-strategy "$1" gh "$2"
   ;;
-"edit-install-script")
-  edit-metadata gh install "$1"
+ee|"edit-event")
+  edit-event "$1" gh "$2" "$3" "$4"
   ;;
-"delete-upgrade-strategy")
-  remove-metadata gh run-on-upgrade "$1"
+eh|"edit-hook")
+  edit-hook "$1" gh "$2"
   ;;
-"set-upgrade-strategy")
-  set-upgrade-strategy "$1" gh
+ge|"get-event")
+  get-event "$1" gh "$2" "$3" "$4"
   ;;
-"rebuild")
-  "$0" delete-install-script "$1"
-  "$0" delete-upgrade-strategy "$1"
-  "$0" build "$1"
+gh|"get-hook")
+  get-hook "$1" gh "$2"
+  ;;
+re|"remove-event")
+  remove-event "$1" gh "$2" "$3" "$4"
+  ;;
+rh|"remove-hook")
+  remove-hook "$1" gh "$2"
+  ;;
+reh|"remove-event-and-hook")
+  remove-event "$1" gh "*" "*" "$2"
+  remove-hook "$1" gh "$2"
+  ;;
+rne|"run-event")
+  run-event "$1" gh "$2" 
+  ;;
+rnh|"run-hook")
+  run-hook "$1" gh "$2"
   ;;
 "package-manager")
   echo "gh (no independent existence)"

@@ -53,7 +53,7 @@ case "$subcommand" in
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    "$0" build "$host_package_identifier"
+    run-event "$host_package_identifier" git-packages install 
   )
   ;;
 "remove")
@@ -66,9 +66,7 @@ case "$subcommand" in
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git checkout -- . && git pull) || exit 1
 
-    if should-upgrade git-packages "$host_package_identifier"; then
-      "$0" build "$host_package_identifier"
-    fi
+    run-event "$host_package_identifier" git-packages upgrade
   else
     echo "package not installed: $package_path" >&2
     exit 1
@@ -80,25 +78,39 @@ case "$subcommand" in
 "which")
   which-package "$1" git-packages
   ;;
-"build")
-  build-package "$1" git-packages
+ch|"create-hook")
+   create-hook "$1" git-packages "$2"
   ;;
-"delete-install-script")
-  remove-metadata git-packages install "$1"
+chss|"create-hook-and-set-strategy")
+  create-hook-and-set-strategy "$1" git-packages "$2"
   ;;
-"edit-install-script")
-  edit-metadata git-packages install "$1"
+ee|"edit-event")
+  edit-event "$1" git-packages "$2" "$3" "$4"
   ;;
-"delete-upgrade-strategy")
-  remove-metadata git-packages run-on-upgrade "$1"
+eh|"edit-hook")
+  edit-hook "$1" git-packages "$2"
   ;;
-"set-upgrade-strategy")
-  set-upgrade-strategy "$1" git-packages
+ge|"get-event")
+  get-event "$1" git-packages "$2" "$3" "$4"
   ;;
-"rebuild")
-  "$0" delete-install-script "$1"
-  "$0" delete-upgrade-strategy "$1"
-  "$0" build "$1"
+gh|"get-hook")
+  get-hook "$1" git-packages "$2"
+  ;;
+re|"remove-event")
+  remove-event "$1" git-packages "$2" "$3" "$4"
+  ;;
+rh|"remove-hook")
+  remove-hook "$1" git-packages "$2"
+  ;;
+reh|"remove-event-and-hook")
+  remove-event "$1" git-packages "*" "*" "$2"
+  remove-hook "$1" git-packages "$2"
+  ;;
+rne|"run-event")
+  run-event "$1" git-packages "$2" 
+  ;;
+rnh|"run-hook")
+  run-hook "$1" git-packages "$2"
   ;;
 "package-manager")
   echo "git-packages (no independent existence)"
