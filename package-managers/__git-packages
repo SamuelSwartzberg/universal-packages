@@ -161,4 +161,8 @@ NOTES
   package identifier is the package identifier in the format <username>/<repository name>.
 EOF
   ;;
+  *)
+    echo "git-packages: unrecognized subcommand: $subcommand" >&2
+    exit 1
+  ;;
 esac

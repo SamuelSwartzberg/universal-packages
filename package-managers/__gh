@@ -164,6 +164,8 @@ case "$subcommand" in
 "install-self")
   mkdir -p "$GITHUB_PACKAGES"
   ;;
-  
-
+*)
+  echo "gh: unknown subcommand: $subcommand" >&2
+  exit 1
+  ;;
 esac
