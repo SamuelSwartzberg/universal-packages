@@ -12,11 +12,11 @@ fi
 
 # short commands are _<letter> to avoid conflicts with subcommands, since the package reasons about the first arg to determine if it is a subcommand or a package name
 
-package_managers=("os" "pip" "cargo" "npm" ""$package-manager"" "brew-cask" "brew-tap" "gh" "go" "test")
+package_managers=("os" "pip" "cargo" "npm" "git-packages" "brew-cask" "brew-tap" "gh" "go" "test")
 
 case "$package_manager" in
 "gp" | "gitp" | "gitpackages" | "gpackages")
-  package_manager=""$package-manager""
+  package_manager="git-packages"
   ;;
 "_b" | "brew")
   package_manager="os"
@@ -81,7 +81,7 @@ fi
 subcommand="$1"
 shift
 
-pkg_command test-existence >/dev/null 2>&1 || pkg_command install-self
+# pkg_command test-existence >/dev/null 2>&1 || pkg_command install-self
 
 case "$subcommand" in
 es | "echo-self")
@@ -226,41 +226,41 @@ wpm | "which-package-manager")
   pkg_command which-self
   ;;
 ch|"create-hook")
-   create-hook "$1" "$package-manager" "$2"
+   create-hook "$1" "$package_manager" "$2"
   ;;
 chss|"create-hook-and-set-strategy")
-  create-hook-and-set-strategy "$1" "$package-manager" "$2"
+  create-hook-and-set-strategy "$1" "$package_manager" "$2"
   ;;
 shs|"set-hook-strategy")
-  set-hook-strategy "$1" "$package-manager" "$2"
+  set-hook-strategy "$1" "$package_manager" "$2"
   ;;
 ee|"edit-event")
-  edit-event "$1" "$package-manager" "$2" "$3" "$4"
+  edit-event "$1" "$package_manager" "$2" "$3" "$4"
   ;;
 eh|"edit-hook")
-  edit-hook "$1" "$package-manager" "$2"
+  edit-hook "$1" "$package_manager" "$2"
   ;;
 ge|"get-event")
-  get-event "$1" "$package-manager" "$2" "$3" "$4"
+  get-event "$1" "$package_manager" "$2" "$3" "$4"
   ;;
 gh|"get-hook")
-  get-hook "$1" "$package-manager" "$2"
+  get-hook "$1" "$package_manager" "$2"
   ;;
 re|"remove-event")
-  remove-event "$1" "$package-manager" "$2" "$3" "$4"
+  remove-event "$1" "$package_manager" "$2" "$3" "$4"
   ;;
 rh|"remove-hook")
-  remove-hook "$1" "$package-manager" "$2"
+  remove-hook "$1" "$package_manager" "$2"
   ;;
 reh|"remove-event-and-hook")
-  remove-event "$1" "$package-manager" "*" "*" "$2"
-  remove-hook "$1" "$package-manager" "$2"
+  remove-event "$1" "$package_manager" "*" "*" "$2"
+  remove-hook "$1" "$package_manager" "$2"
   ;;
 rne|"run-event")
-  run-event "$1" "$package-manager" "$2" 
+  run-event "$1" "$package_manager" "$2" 
   ;;
 rnh|"run-hook")
-  run-hook "$1" "$package-manager" "$2"
+  run-hook "$1" "$package_manager" "$2"
   ;;
 h | "help")
   pkg_command help
