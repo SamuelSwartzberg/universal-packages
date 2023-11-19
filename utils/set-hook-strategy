@@ -20,43 +20,28 @@ done
 
 unset IFS
 
-while true; do
-  options=(
-    "1) install"
-    "2) upgrade"
-    "3) install,upgrade"
-    # remove/uninstall may be added later
-  )
-  run_on_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select event(s) to run hook $hook_type on: " | cut -d ' ' -f '2-')
-  if [[ -z "$run_on_choice" ]]; then
-    ask "No choice made. Do you want to cancel & exit?" Y && exit 1
-  else
-    ask "You chose $run_on_choice, is that correct?" Y && break 2
-  fi
-done
+declare -a run_ons
+run_ons=(
+  "install"
+  "upgrade"
+  # more in the future
+)
 
-
-
-while true; do
-  options=(
-    "1) always"
-    "2) ask-yes"
-    "3) ask-no"
-    "4) never"
-  )
-  policy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select policy for running hook $hook_type on $run_on_choice: " | cut -d ' ' -f '2-')
-  if [[ -z "$policy_choice" ]]; then
-    ask "No choice made. Do you want to cancel & exit?" Y && exit 1
-  else
-    ask "You chose $policy_choice, is that correct?" Y && break 2
-  fi
-done
-
-# iterate through comma-separated run_on_choice
-
-IFS=',' read -ra run_on_choices <<< "$run_on_choice"
-
-for run_on in "${run_on_choices[@]}"; do
+for run_on in "${run_ons[@]}"; do
+  while true; do
+    options=(
+      "1) always"
+      "2) ask-yes"
+      "3) ask-no"
+      "4) never"
+    )
+    policy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select policy for running hook $hook_type on $run_on: " | cut -d ' ' -f '2-')
+    if [[ -z "$policy_choice" ]]; then
+      ask "No choice made. Do you want to cancel & exit?" Y && exit 1
+    else
+      ask "You chose $policy_choice, is that correct?" Y && break
+    fi
+  done
   run_on_path="$RUN_ON_HOME/$run_on/$policy_choice"
   mkdir -p "$run_on_path"
   ln -sf "$hook_path" "$run_on_path/$hook_type"
