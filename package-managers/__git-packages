@@ -53,7 +53,6 @@ case "$subcommand" in
     if echo "$1" | grep -q @; then
       git checkout "$version" || exit 1
     fi
-    run-event "$host_package_identifier" git-packages install 
   )
   ;;
 "remove")
@@ -65,8 +64,6 @@ case "$subcommand" in
   echo "Upgrading package at $package_path ..."
   if [[ -d "$package_path" ]]; then
     (cd "$package_path" && git checkout -- . && git pull) || exit 1
-
-    run-event "$host_package_identifier" git-packages upgrade
   else
     echo "package not installed: $package_path" >&2
     exit 1

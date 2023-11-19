@@ -135,8 +135,6 @@ case "$subcommand" in
 
       mkdir -p "$(dirname "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier")"
       echo "$selected_version" > "$GITHUB_PACKAGE_VERSIONS/$host_package_identifier"
-
-      run-event "$host_package_identifier" gh upgrade
     else
       echo "package not installed: $package_path" >&2
       exit 1
