@@ -3,11 +3,18 @@
 target="${1?Target expected}"
 type="${2:-git-packages}"
 host_package_identifier="$(host-package-ident "$target" "$type")"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
 RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+mkdir -p "$RUN_ON_HOME"
 
 event="$3"
 if [[ -z "$event" ]]; then
   event=$( ( { cd "$RUN_ON_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select event: " ) )
+fi
+
+if [[ -z "$event" ]]; then
+  echo "No event selected" >&2
+  exit 1
 fi
 
 policy="$4"
@@ -15,9 +22,19 @@ if [[ -z "$policy" ]]; then
   policy=$( ( { cd "$RUN_ON_HOME/$event" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select policy: " ) )
 fi
 
+if [[ -z "$policy" ]]; then
+  echo "No policy selected" >&2
+  exit 1
+fi
+
 hook_type="$5"
 if [[ -z "$hook_type" ]]; then
   hook_type=$( ( { cd "$RUN_ON_HOME/$event/$policy" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
+fi
+
+if [[ -z "$hook_type" ]]; then
+  echo "No hook selected" >&2
+  exit 1
 fi
 
 hook_path="$RUN_ON_HOME/$event/$policy/$hook_type"

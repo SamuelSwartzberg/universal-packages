@@ -3,7 +3,9 @@
 target="${1?Target expected}"
 type="${2:-git-packages}"
 host_package_identifier="$(host-package-ident "$target" "$type")"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
 RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+mkdir -p "$RUN_ON_HOME"
 
 event="${3:-*}"
 policy="${4:-*}"
