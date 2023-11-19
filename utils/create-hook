@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-target="${1?Target expected}"
+target="${1:?Target expected}"
 type="${2:?package manager expected}"
 hook_type="${3:-default}"
 package_path="$(package-path "$target" "$type")"

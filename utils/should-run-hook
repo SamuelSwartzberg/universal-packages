@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-upgrade_policy="${1?Missing upgrade policy}"
+upgrade_policy="${1:?Missing upgrade policy}"
 should_run=false
 
 case "$upgrade_policy" in
