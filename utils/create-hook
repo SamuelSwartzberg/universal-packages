@@ -88,6 +88,7 @@ export package_path_at_install='$package_path'
 export PACKAGE_NAME='$package_name'
 export HOST_PACKAGE_IDENTIFIER='$host_package_identifier'
 export PACKAGE_PATH="\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}"
+export HOOK_HOME="\${DATA_HOME}/hooks/\${HOST_PACKAGE_IDENTIFIER}"
 
 # The structure of the package at install time is (provided for convenience only):
 EOF
