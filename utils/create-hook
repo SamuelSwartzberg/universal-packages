@@ -196,3 +196,7 @@ if [[ "$skip_edit" != true ]]; then
 fi
 
 chmod +x "$hook_path"
+
+if ask "Hook created. Do you want to run it now?" Y; then
+  "$hook_path"
+fi

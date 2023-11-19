@@ -30,6 +30,5 @@ unset IFS
 if ! $found_at_least_one_hook_to_run; then
   if ask "No hooks found for $event. Do you want to create one? Creating a hook, even a dummy hook, dismissses this message permanently." Y; then
     create-hook-and-set-strategy "$target" "$type" default
-    "$0" "$target" "$type" "$event"
   fi
 fi
