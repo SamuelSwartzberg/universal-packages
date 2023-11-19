@@ -84,6 +84,9 @@ ch|"create-hook")
 chss|"create-hook-and-set-strategy")
   create-hook-and-set-strategy "$1" git-packages "$2"
   ;;
+shs|"set-hook-strategy")
+  set-hook-strategy "$1" git-packages "$2"
+  ;;
 ee|"edit-event")
   edit-event "$1" git-packages "$2" "$3" "$4"
   ;;
