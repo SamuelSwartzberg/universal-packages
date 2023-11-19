@@ -5,49 +5,49 @@ shift
 
 case "$subcommand" in
 "test-existence")
-  command -v git-packages >/dev/null || exit 1
+  command -v github-releases >/dev/null || exit 1
   ;;
 "list-no-version")
-  git-packages list-no-version "$@"
+  github-releases list-no-version "$@"
   ;;
 "list-version") 
-  git-packages list-version "$@"
+  github-releases list-version "$@"
   ;;
 "list")
-  git-packages list "$@"
+  github-releases list "$@"
   ;;
 "listable-name")
-  git-packages listable-name "$@"
+  github-releases listable-name "$@"
   ;;
 "install")
-  git-packages install "$@"
+  github-releases install "$@"
   ;;
 "remove")
-  git-packages remove "$@"
+  github-releases remove "$@"
   ;;
 "upgrade")
-  git-packages upgrade "$@"
+  github-releases upgrade "$@"
   ;;
 "upgrade-all")
-  git-packages upgrade-all "$@"
+  github-releases upgrade-all "$@"
   ;;
 "which")
-  git-packages which "$@"
+  github-releases which "$@"
   ;;
 "package-manager")
-  git-packages package-manager
+  github-releases package-manager
   ;;
 "package-manager-version")
-  git-packages package-manager-version
+  github-releases package-manager-version
   ;;
 "which-self")
-  which git-packages
+  which github-releases
   ;;
 "install-self")
   upkg gp install gitea.localhost/user1/gitlike-packages
   ;;
 "help")
-  git-packages help
+  github-releases help
   ;;
 *)
   echo "gh: unknown subcommand: $subcommand" >&2

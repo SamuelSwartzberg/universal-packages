@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-package_path="$(package-path "${1:?}" "${2:-git-packages}")"
-if [[ -d "$package_path" ]]; then
-  echo "$package_path"
-else
-  echo "package not installed: $package_path" >&2
-  exit 1
-fi

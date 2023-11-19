@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-host_package_ident="$(host-package-ident "${1:?missing target arg}" "${2:-git-packages}")"
-if [[ $host_package_ident == *.localhost*/*/* ]]; then # for now we can be pretty sure that only .localhost domains are http
-  echo "http://$host_package_ident"
-else
-  echo "https://$host_package_ident"
-fi

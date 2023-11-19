@@ -36,8 +36,8 @@ case "$package_manager" in
 "_n" | "node")
   package_manager="npm"
   ;;
-"_g" | "gh" | "github" | "github-releases")
-  package_manager="gh"
+"_g" | "gh" | "github")
+  package_manager="github-releases"
   ;;
 "_t" | "tst" | "tester")
   package_manager="test"
