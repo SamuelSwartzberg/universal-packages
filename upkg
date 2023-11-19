@@ -81,7 +81,7 @@ fi
 subcommand="$1"
 shift
 
-# pkg_command test-existence >/dev/null 2>&1 || pkg_command install-self
+pkg_command test-existence >/dev/null 2>&1 || pkg_command install-self
 
 case "$subcommand" in
 es | "echo-self")
