@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+$VISUAL "$(get-hook "$1" "$2" "$3")"

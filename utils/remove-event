@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+host_package_identifier="$(host-package-ident "$target" "$type")"
+RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+
+event="${3:-*}"
+policy="${4:-*}"
+hook_type="${5:*}"
+
+IFS=$'\n'
+shopt -s nullglob
+
+for hook in "$RUN_ON_HOME"/$event/$policy/$hook_type; do
+  rm "$hook"
+done
+
+unset IFS
+shopt -u nullglob

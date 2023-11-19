@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+hook_type="${3:-default}"
+
+create-hook "$target" "$type" "$hook_type"
+set-hook-strategy "$target" "$type" "$hook_type"

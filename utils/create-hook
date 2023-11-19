@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+hook_type="${3:-default}"
+package_path="$(package-path "$target" "$type")"
+package_name="$(basename "$package_path")"
+host_package_identifier="$(host-package-ident "$target" "$type")"
+echo "Building package $host_package_identifier for $type..."
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/upkg/$type"
+TMP_HOME="${XDG_RUNTIME_DIR:-$HOME/.tmp}/upkg/$type"
+mkdir -p "$DATA_HOME" "$CACHE_HOME" "$TMP_HOME"
+HOOK_HOME="$DATA_HOME/hooks/$host_package_identifier"
+hook_path="$HOOK_HOME/$hook_type"
+
+
+[[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+[[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+
+# Check for files and store them in arrays
+package_executable=""
+build_zig=""
+declare -a makefiles
+declare -a install_scripts
+declare -a update_scripts
+
+[[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+[[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+for file in GNUmakefile makefile Makefile; do
+  [[ -f "$package_path/$file" ]] && makefiles+=("$file")
+done
+for file in "$package_path"/install*; do
+  [[ -f "$file" ]] && install_scripts+=("$file")
+done
+for file in "$package_path"/update*; do
+  [[ -f "$file" ]] && update_scripts+=("$file")
+done
+
+# Generate hint text dynamically
+link_hint=$([[ -n "$package_executable" ]] && echo "(executable with same name as package found)")
+zig_hint=$([[ -n "$build_zig" ]] && echo "(build.zig found)" || echo "(no build.zig found!)")
+make_hint=$([[ ${#makefiles[@]} -gt 0 ]] && echo "(makefiles found: ${makefiles[*]})")
+install_script_hint=$([[ ${#install_scripts[@]} -gt 0 ]] && echo "(install script found: ${install_scripts[*]})")
+update_script_hint=$([[ ${#update_scripts[@]} -gt 0 ]] && echo "(update script found: ${update_scripts[*]})")
+
+while true; do
+  # Ask user for hook type
+  echo "Select hook type:"
+  options=(
+    "1) none"
+    "2) link $link_hint"
+    "3) build with zig $zig_hint"
+    "4) run script $install_script_hint $update_script_hint"
+    "5) make $make_hint"
+    "6) run a custom script"
+  )
+  action_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: ")
+  if [[ -z "$action_choice" ]]; then
+    ask "No choice made. Do you want to cancel & exit?" Y && exit 1
+  else
+    ask "You chose $action_choice, is that correct?" Y && break 2
+  fi
+done
+
+# Check if the user made a choice
+if [[ -z "$action_choice" ]]; then
+  echo "No choice made. Exiting..."
+  exit 1
+fi
+
+# Extract the action index from the choice
+action_index=$(printf '%s\n' "${options[@]}" | grep -nxF "$action_choice" | cut -d: -f1)
+
+hook_code="$(
+  cat <<EOF
+#!/usr/bin/env bash
+
+# This is an auto-generated hook created by upkg for $host_package_identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
+# This file will not be regenerated unless manually deleted. Feel free to edit this file.
+
+export DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type"
+export CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type"
+export TMP_HOME="\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type"
+export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
+export PACKAGES_HOME="\${DATA_HOME}/packages"
+export package_path_at_install='$package_path'
+export PACKAGE_NAME='$package_name'
+export HOST_PACKAGE_IDENTIFIER='$host_package_identifier'
+export PACKAGE_PATH="\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}"
+
+# The structure of the package at install time is (provided for convenience only):
+EOF
+)"
+
+hook_code+="\n$(tree -L 3 --noreport "$package_path" | sed 's/^/# /')\n\n"
+
+skip_edit=false
+
+case "$action_index" in
+  "1") # none
+    echo "Don't install anything. Empty script generated."
+    skip_edit=true
+    ;;
+  "2") # link
+    if [[ -n "$package_executable" ]]; then
+      if ask "Executable with same name as package found. Do you want add linking it to the hook?" Y; then
+        read -rp "Rename to (optional, leave empty to not rename): " rename_to
+        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\"\n"
+      fi
+    fi
+    if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
+      # Loop to select executables
+      while true; do
+        echo "Select a file to link:"
+        linkme=$( ( { cd "$package_path" || exit; } && tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
+        read -rp "Rename to (optional, leave empty to not rename): " rename_to
+        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
+        ask "Do you want to link something else?" N || break
+      done
+    fi
+    ;;
+  "3") # zig
+    read -rp "Additional build args (optional, leave empty to not use any): " build_args
+    # shellcheck disable=SC2016 # single quotes are intentional, this should only be expanded when the script is run
+    hook_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/.local/bin}")" '"$build_args"'\n'
+    ;;
+  "4") # install-script
+    # Loop to select install scripts
+    if [[ "${#install_scripts[@]}" -gt 0 ]]; then
+      if ask "Install script found. Do you want to add them to the hook?" Y; then
+        for script in "${install_scripts[@]}"; do
+          script_name=$(basename "$script")
+          read -rp "Additional args for $script_name (optional): " args
+          hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+          hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        done
+      fi
+    fi
+     # Loop to select install scripts
+    if [[ "${#update_scripts[@]}" -gt 0 ]]; then
+      if ask "Update script found. Do you want to add them to the hook?" Y; then
+        for script in "${update_scripts[@]}"; do
+          script_name=$(basename "$script")
+          read -rp "Additional args for $script_name (optional): " args
+          hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+          hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        done
+      fi
+    fi
+    if [[ "${#install_scripts[@]}" -eq 0 && "${#update_scripts[@]}" -eq 0 ]]  || ask "Do you want to add a/another script to the hook?" N; then
+      # Loop to select install scripts
+      while true; do
+        echo "Select a script to run:"
+        script=$( ( { cd "$package_path" || exit; } && tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: " ) )
+        read -rp "Additional args (optional): " args
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+        hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        ask "Do you want to run something else?" N || break
+      done
+    fi
+    ;;
+  "5") # make
+    # if there is only one makefile, use it
+    makefile=""
+    if [[ ${#makefiles[@]} -eq 1 ]]; then
+      makefile="${makefiles[0]}"
+    else
+      # select makefile
+      echo "Select a makefile to use:"
+      select selectedmakefile in "${makefiles[@]}"; do
+        makefile="$selectedmakefile"
+        break
+      done
+    fi
+    hook_code+="export MAKEFILE=\"\${PACKAGE_PATH}/$makefile\"\n\n"
+    hook_code+="make -C \"\${PACKAGE_PATH}\"  -f \"\${MAKEFILE}\" install\n"
+    ;;
+  "6") # run
+    # No additional code needed
+    ;;
+esac
+
+# Save generated hook
+mkdir -p "$(dirname "$hook_path")"
+echo -e "$hook_code" > "$hook_path"
+
+if [[ "$skip_edit" != true ]]; then
+  # Ask user to edit the hook
+  ask "Hook generated. Do you want to edit the script?" N && $VISUAL "$hook_path"
+fi
+
+chmod +x "$hook_path"

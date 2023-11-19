@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+event="${3?Hook event expected}"
+host_package_identifier="$(host-package-ident "$target" "$type")"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+
+IFS=$'\n'
+shopt -s nullglob
+
+found_at_least_one_hook_to_run=false
+
+for policy_dir in "$RUN_ON_HOME"/"$event"/*; do
+  if [ -n "$(ls -A "$policy_dir")" ]; then
+    found_at_least_one_hook_to_run=true
+  fi
+  policy="$(basename "$policy_dir")"
+  if should-run-hook "$policy"; then
+    for hook in "$policy_dir"/*; do
+      echo "Running hook $hook for $event"
+      "$hook"
+    done
+  fi
+done
+
+unset IFS
+
+if ! $found_at_least_one_hook_to_run; then
+  if ask "No hooks found for $event. Do you want to create one? Creating a hook, even a dummy hook, dismissses this message permanently." Y; then
+    create-hook-and-set-strategy "$target" "$type" "$event"
+  fi
+fi

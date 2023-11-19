@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-upgrade_strategy="${1?Missing upgrade strategy}"
+upgrade_policy="${1?Missing upgrade policy}"
 should_run=false
 
-case "$upgrade_strategy" in
+case "$upgrade_policy" in
   "always")
     should_run=true
     ;;
@@ -17,7 +17,7 @@ case "$upgrade_strategy" in
     should_run=false
     ;;
   *)
-    echo "Unknown upgrade strategy: $upgrade_strategy" >&2
+    echo "Unknown upgrade policy: $upgrade_policy" >&2
     exit 1
     ;;
 esac

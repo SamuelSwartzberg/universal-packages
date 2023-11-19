@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+hook_type="${3:-default}"
+host_package_identifier="$(host-package-ident "$target" "$type")"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+HOOK_HOME="$DATA_HOME/hooks/$host_package_identifier"
+hook_path="$HOOK_HOME/$hook_type"
+
+create-hook "$target" "$type" "$hook_type" && "$hook_path"
