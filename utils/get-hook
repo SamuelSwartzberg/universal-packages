@@ -3,7 +3,7 @@
 target="${1?Target expected}"
 type="${2:?package manager expected}"
 hook_type="$3"
-identifier="$(upkg listable-name "$type" "$target")"
+identifier="$(upkg "$type" listable-name "$target")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
 HOOK_HOME="$DATA_HOME/hooks/$identifier"
 mkdir -p "$HOOK_HOME"

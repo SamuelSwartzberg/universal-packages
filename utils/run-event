@@ -3,7 +3,7 @@
 target="${1?Target expected}"
 type="${2:?package manager expected}"
 event="${3?Hook event expected}"
-identifier="$(upkg listable-name "$type" "$target")"
+identifier="$(upkg "$type" listable-name "$target")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
 RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
 
