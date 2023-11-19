@@ -185,24 +185,7 @@ EOF
   # Ask user what strategy we should choose when upgrading: always, ask-yes, ask-no, never
 
   if ! [[ -f "$upgrade_build_strategy_path" ]] && ask "Do you want to set an upgrade strategy?" Y; then
-    while true; do
-      echo "Select upgrade strategy:"
-      options=(
-        "1) always"
-        "2) ask-yes"
-        "3) ask-no"
-        "4) never"
-      )
-      strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: " | cut -d ' ' -f '2-')
-      if [[ -z "$strategy_choice" ]]; then
-        ask "No choice made. Do you want to cancel & exit?" Y && exit 1
-      else
-        ask "You chose $strategy_choice, is that correct?" Y && break 2
-      fi
-    done
-
-    mkdir -p "$(dirname "$upgrade_build_strategy_path")"
-    echo "$strategy_choice" > "$upgrade_build_strategy_path"
+    set-upgrade-strategy "$target" "$type"
   fi
   chmod +x "$install_script_path"
   # Run the install script

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+target="${1?Target expected}"
+type="${2:-git-packages}"
+
+host_package_identifier="$(host-package-ident "$target" "$type")"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
+upgrade_build_strategy_path="$DATA_HOME/run-on-upgrade/$host_package_identifier"
+
+while true; do
+  echo "Select upgrade strategy:"
+  options=(
+    "1) always"
+    "2) ask-yes"
+    "3) ask-no"
+    "4) never"
+  )
+  strategy_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: " | cut -d ' ' -f '2-')
+  if [[ -z "$strategy_choice" ]]; then
+    ask "No choice made. Do you want to cancel & exit?" Y && exit 1
+  else
+    ask "You chose $strategy_choice, is that correct?" Y && break 2
+  fi
+done
+
+mkdir -p "$(dirname "$upgrade_build_strategy_path")"
+echo "$strategy_choice" > "$upgrade_build_strategy_path"
