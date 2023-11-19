@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 target="${1?Target expected}"
-type="${2:-git-packages}"
+type="${2:?package manager expected}"
 hook_type="$3"
 host_package_identifier="$(host-package-ident "$target" "$type")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
