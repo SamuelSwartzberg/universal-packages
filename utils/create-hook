@@ -5,13 +5,13 @@ type="${2:?package manager expected}"
 hook_type="${3:-default}"
 package_path="$(package-path "$target" "$type")"
 package_name="$(basename "$package_path")"
-host_package_identifier="$(host-package-ident "$target" "$type")"
-echo "Building package $host_package_identifier for $type..."
+identifier="$(upkg listable-name "$type" "$target")"
+echo "Building package $identifier for $type..."
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
 CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/upkg/$type"
 TMP_HOME="${XDG_RUNTIME_DIR:-$HOME/.tmp}/upkg/$type"
 mkdir -p "$DATA_HOME" "$CACHE_HOME" "$TMP_HOME"
-HOOK_HOME="$DATA_HOME/hooks/$host_package_identifier"
+HOOK_HOME="$DATA_HOME/hooks/$identifier"
 hook_path="$HOOK_HOME/$hook_type"
 
 
@@ -76,7 +76,7 @@ hook_code="$(
   cat <<EOF
 #!/usr/bin/env bash
 
-# This is an auto-generated hook created by upkg for $host_package_identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
+# This is an auto-generated hook created by upkg for $identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
 # This file will not be regenerated unless manually deleted. Feel free to edit this file.
 
 export DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type"
@@ -86,7 +86,7 @@ export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
 export PACKAGES_HOME="\${DATA_HOME}/packages"
 export package_path_at_install='$package_path'
 export PACKAGE_NAME='$package_name'
-export HOST_PACKAGE_IDENTIFIER='$host_package_identifier'
+export HOST_PACKAGE_IDENTIFIER='$identifier'
 export PACKAGE_PATH="\${PACKAGES_HOME}/\${HOST_PACKAGE_IDENTIFIER}"
 export HOOK_HOME="\${DATA_HOME}/hooks/\${HOST_PACKAGE_IDENTIFIER}"
 

@@ -2,9 +2,9 @@
 
 target="${1?Target expected}"
 type="${2:?package manager expected}"
-host_package_identifier="$(host-package-ident "$target" "$type")"
+identifier="$(upkg listable-name "$type" "$target")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
 mkdir -p "$RUN_ON_HOME"
 
 event="$3"
@@ -42,5 +42,5 @@ hook_path="$RUN_ON_HOME/$event/$policy/$hook_type"
 if [[ -f "$hook_path" ]]; then
   echo "$hook_path"
 else
-  echo "No $hook_type hook on $event with $policy policy found for $host_package_identifier of $type" >&2
+  echo "No $hook_type hook on $event with $policy policy found for $identifier of $type" >&2
 fi

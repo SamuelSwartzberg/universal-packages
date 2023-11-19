@@ -3,9 +3,9 @@
 target="${1?Target expected}"
 type="${2:?package manager expected}"
 event="${3?Hook event expected}"
-host_package_identifier="$(host-package-ident "$target" "$type")"
+identifier="$(upkg listable-name "$type" "$target")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-RUN_ON_HOME="$DATA_HOME/run-on/$host_package_identifier"
+RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
 
 IFS=$'\n'
 shopt -s nullglob

@@ -3,9 +3,9 @@
 target="${1?Target expected}"
 type="${2:?package manager expected}"
 hook_type="$3"
-host_package_identifier="$(host-package-ident "$target" "$type")"
+identifier="$(upkg listable-name "$type" "$target")"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-HOOK_HOME="$DATA_HOME/hooks/$host_package_identifier"
+HOOK_HOME="$DATA_HOME/hooks/$identifier"
 mkdir -p "$HOOK_HOME"
 if [[ -z "$hook_type" ]]; then
   hook_type=$( ( { cd "$HOOK_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
@@ -21,5 +21,5 @@ hook_path="$HOOK_HOME/$hook_type"
 if [[ -f "$hook_path" ]]; then
   echo "$hook_path"
 else
-  echo "No $hook_type hook found for $host_package_identifier of $type" >&2
+  echo "No $hook_type hook found for $identifier of $type" >&2
 fi
