@@ -62,7 +62,7 @@ case "$subcommand" in
     if [[ -z "$selected_version" ]]; then
       echo "Version $version not found for package $package"
       if ask "Do you want to fzf a version instead?" Y; then
-        selected_version="$(gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | fzf | cut -f "$fieldindex" -d$'\t')"
+        selected_version="$(gh release list -L 100 -R "$host_package_identifier" | tail -n +2 | fzf | cut -f 3 -d$'\t')"
       else
         echo "Without a version, the package cannot be installed. Aborting..."
         exit 1
