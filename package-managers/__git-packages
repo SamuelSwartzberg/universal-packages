@@ -78,43 +78,6 @@ case "$subcommand" in
 "which")
   which-package "$1" git-packages
   ;;
-ch|"create-hook")
-   create-hook "$1" git-packages "$2"
-  ;;
-chss|"create-hook-and-set-strategy")
-  create-hook-and-set-strategy "$1" git-packages "$2"
-  ;;
-shs|"set-hook-strategy")
-  set-hook-strategy "$1" git-packages "$2"
-  ;;
-ee|"edit-event")
-  edit-event "$1" git-packages "$2" "$3" "$4"
-  ;;
-eh|"edit-hook")
-  edit-hook "$1" git-packages "$2"
-  ;;
-ge|"get-event")
-  get-event "$1" git-packages "$2" "$3" "$4"
-  ;;
-gh|"get-hook")
-  get-hook "$1" git-packages "$2"
-  ;;
-re|"remove-event")
-  remove-event "$1" git-packages "$2" "$3" "$4"
-  ;;
-rh|"remove-hook")
-  remove-hook "$1" git-packages "$2"
-  ;;
-reh|"remove-event-and-hook")
-  remove-event "$1" git-packages "*" "*" "$2"
-  remove-hook "$1" git-packages "$2"
-  ;;
-rne|"run-event")
-  run-event "$1" git-packages "$2" 
-  ;;
-rnh|"run-hook")
-  run-hook "$1" git-packages "$2"
-  ;;
 "package-manager")
   echo "git-packages (no independent existence)"
   ;;
