@@ -147,6 +147,9 @@ case "$subcommand" in
 "delete-upgrade-strategy")
   remove-metadata gh run-on-upgrade "$1"
   ;;
+"set-upgrade-strategy")
+  set-upgrade-strategy "$1" gh
+  ;;
 "rebuild")
   "$0" delete-install-script "$1"
   "$0" delete-upgrade-strategy "$1"
