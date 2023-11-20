@@ -10,7 +10,19 @@ hook_type="${3:-default}"
 
 
 package_path="$(upkg "$type" which "$target")"
+
+if [[ -z "$package_path" ]]; then
+  echo "Was not able to find path for $target of $type. Probably not installed. Please ensure the name is correct, the package is installed, and then try again." >&2
+  exit 1
+fi
+
 identifier="$(upkg "$type" listable-name "$target")"
+
+if [[ -z "$identifier" ]]; then
+  echo "Was not able to find identifier for $target of $type. However, we were able to find its path: $package_path. More likely than not this is due to an unexpected change in the configuration or directory structure, or a bug. Please report this issue." >&2
+  exit 1
+fi
+
 PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/hooks/$identifier"
 hook_path="$PACKAGE_HOOK_HOME/$hook_type"
 
