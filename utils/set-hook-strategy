@@ -9,8 +9,8 @@ hook_type="${3:-default}"
 # derived variables
 
 identifier="$(upkg "$type" listable-name "$target")"
-PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_HOOKS_DATA_HOME/$identifier"
-PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_RUN_ON_DATA_HOME/$identifier"
+PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_WRAPPER_HOOKS_DATA_HOME/$identifier"
+PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_WRAPPER_RUN_ON_DATA_HOME/$identifier"
 hook_path="$PACKAGE_HOOK_HOME/$hook_type"
 
 

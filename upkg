@@ -10,10 +10,18 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null
 
 # constants
 
-export PATH="$SCRIPT_DIR"/utils:"$PATH"
-export UPKG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg"
-export UPKG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/upkg"
-export UPKG_TMP_HOME="${TMPDIR:-$HOME/.tmp}/upkg"
+if [ -z "$PATH_ALREADY_ADJUSTED" ]; then
+  export PATH="$SCRIPT_DIR"/utils:"$SCRIPT_DIR":"$PATH"
+fi
+export PATH_ALREADY_ADJUSTED=1
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export UPKG_DATA_HOME="$XDG_DATA_HOME/upkg"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export UPKG_CACHE_HOME="$XDG_CACHE_HOME/upkg"
+export XDG_TMP_HOME="${TMPDIR:-$HOME/.tmp}"
+export UPKG_TMP_HOME="$XDG_TMP_HOME/upkg"
+
+mkdir -p "$UPKG_DATA_HOME" "$UPKG_CACHE_HOME" "$UPKG_TMP_HOME"
 
 if [ -z "$package_manager" ]; then
   package_manager="help" # default to help
@@ -60,16 +68,16 @@ case "$package_manager" in
   ;;
 esac
 
-export PACKAGE_MANAGER_DATA_HOME="$UPKG_DATA_HOME/$package_manager"
-export PACKAGE_MANAGER_CACHE_HOME="$UPKG_CACHE_HOME/$package_manager"
-export PACKAGE_MANAGER_TMP_HOME="$UPKG_TMP_HOME/$package_manager"
-export PACKAGE_MANAGER_HOOKS_DATA_HOME="$PACKAGE_MANAGER_DATA_HOME/hooks"
-export PACKAGE_MANAGER_RUN_ON_DATA_HOME="$PACKAGE_MANAGER_DATA_HOME/run-on"
+export PACKAGE_MANAGER_WRAPPER_DATA_HOME="$UPKG_DATA_HOME/$package_manager"
+export PACKAGE_MANAGER_WRAPPER_CACHE_HOME="$UPKG_CACHE_HOME/$package_manager"
+export PACKAGE_MANAGER_WRAPPER_TMP_HOME="$UPKG_TMP_HOME/$package_manager"
+export PACKAGE_MANAGER_WRAPPER_HOOKS_DATA_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/hooks"
+export PACKAGE_MANAGER_WRAPPER_RUN_ON_DATA_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/run-on"
 
+mkdir -p "$PACKAGE_MANAGER_WRAPPER_DATA_HOME" "$PACKAGE_MANAGER_WRAPPER_CACHE_HOME" "$PACKAGE_MANAGER_WRAPPER_TMP_HOME" "$PACKAGE_MANAGER_WRAPPER_HOOKS_DATA_HOME" "$PACKAGE_MANAGER_WRAPPER_RUN_ON_DATA_HOME"
 package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 
 if [ ! -f "$package_manager_command_path" ]; then
-
   for package_manager in "${package_managers[@]}"; do
     $0 "$package_manager" "$@"
   done
@@ -87,7 +95,7 @@ function zet_diff_output() {
 
 pkg_command() { $package_manager_command_path "$@"; }
 
-backup_file="$MDEPENDENCIES"/"$package_manager"
+backup_file="$PACKAGE_MANAGER_WRAPPER_DATA_HOME"/"$package_manager"
 
 if [ ! -f "$backup_file" ]; then
   touch "$backup_file"

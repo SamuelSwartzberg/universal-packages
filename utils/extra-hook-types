@@ -37,8 +37,8 @@ install_script_hint=$([[ ${#install_scripts[@]} -gt 0 ]] && echo "(install scrip
 update_script_hint=$([[ ${#update_scripts[@]} -gt 0 ]] && echo "(update script found: ${update_scripts[*]})")
 
 cat <<EOF
-"3) link $link_hint"
-"4) build with zig $zig_hint"
-"5) run script $install_script_hint $update_script_hint"
-"6) make $make_hint"
+3) link $link_hint
+4) build with zig $zig_hint
+5) run script $install_script_hint $update_script_hint
+6) make $make_hint
 EOF

@@ -4,7 +4,7 @@ target="${1:?Target expected}"
 type="${2:?package manager expected}"
 hook_type="$3"
 identifier="$(upkg "$type" listable-name "$target")"
-PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_DATA_HOME/hooks/$identifier"
+PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/hooks/$identifier"
 mkdir -p "$PACKAGE_HOOK_HOME"
 if [[ -z "$hook_type" ]]; then
   hook_type=$( ( { cd "$PACKAGE_HOOK_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )

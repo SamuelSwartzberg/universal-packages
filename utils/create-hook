@@ -11,18 +11,17 @@ hook_type="${3:-default}"
 
 package_path="$(upkg "$type" which "$target")"
 identifier="$(upkg "$type" listable-name "$target")"
-PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_DATA_HOME/hooks/$identifier"
+PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/hooks/$identifier"
 hook_path="$PACKAGE_HOOK_HOME/$hook_type"
 
 echo "Building package $identifier for $type..."
 
-mkdir -p "$PACKAGE_MANAGER_DATA_HOME" "$PACKAGE_MANAGER_CACHE_HOME" "$PACKAGE_MANAGER_TMP_HOME"
+mkdir -p "$PACKAGE_MANAGER_WRAPPER_DATA_HOME" "$PACKAGE_MANAGER_WRAPPER_CACHE_HOME" "$PACKAGE_MANAGER_WRAPPER_TMP_HOME"
 
 declare -a basic_options extra_options options
 
 while true; do
   # Ask user for hook type
-  echo "Select hook type:"
   basic_options=(
     "1) none"
     "2) run a custom script"
@@ -30,11 +29,11 @@ while true; do
   mapfile -t extra_options < <(upkg "$type" extra-hook-types "$target")
   options=("${basic_options[@]}" "${extra_options[@]}")
   
-  action_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Enter choice: ")
+  action_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select hook type:: ")
   if [[ -z "$action_choice" ]]; then
     ask "No choice made. Do you want to cancel & exit?" Y && exit 1
   else
-    ask "You chose $action_choice, is that correct?" Y && break 2
+    ask "You chose $action_choice, is that correct?" Y && break
   fi
 done
 
@@ -56,12 +55,18 @@ hook_code="$(
 
 # upkg environment variables:
 
-export PACKAGE_MANAGER_DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/upkg/$type"
-export PACKAGE_MANAGER_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}/upkg/$type"
-export PACKAGE_MANAGER_TMP_HOME="\${XDG_RUNTIME_DIR:-\$HOME/.tmp}/upkg/$type"
+export XDG_DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}"
+export UPKG_DATA_HOME="\$XDG_DATA_HOME/upkg"ƒ
+export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}"
+export UPKG_CACHE_HOME="\$XDG_CACHE_HOME/upkg"
+export XDG_TMP_HOME="\${TMPDIR:-\$HOME/.tmp}"
+export UPKG_TMP_HOME="\$XDG_TMP_HOME/upkg"
+export PACKAGE_MANAGER_WRAPPER_DATA_HOME="\$UPKG_DATA_HOME/$type"
+export PACKAGE_MANAGER_WRAPPER_CACHE_HOME="\$UPKG_CACHE_HOME/$type"
+export PACKAGE_MANAGER_WRAPPER_TMP_HOME="\$UPKG_TMP_HOME/$type"
 export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
 export PACKAGE_IDENTIFIER='$identifier'
-export PACKAGE_HOOK_HOME="\${PACKAGE_MANAGER_DATA_HOME}/hooks/\${PACKAGE_IDENTIFIER}"
+export PACKAGE_HOOK_HOME="\${PACKAGE_MANAGER_WRAPPER_DATA_HOME}/hooks/\${PACKAGE_IDENTIFIER}"
 export package_path_at_install='$package_path'
 
 # package manager environment variables:
@@ -69,11 +74,12 @@ export package_path_at_install='$package_path'
 $(upkg "$type" extra-env "$target")
 
 # extra info as provided by the package manager, if any:
-
 EOF
 )"
 
+hook_code+="\n\n"
 hook_code+="$(upkg "$type" extra-info "$target")"
+hook_code+="\n\n"
 
 skip_edit=false
 
@@ -86,7 +92,10 @@ case "$action_index" in
     # No additional code needed
     ;;
   *) # extra hook type
-    hook_code+="$(upkg "$type" get-hook-code-for-extra-hook-type "$target" "$action_index")"
+    mkfifo "$PACKAGE_MANAGER_WRAPPER_TMP_HOME/extra-hook-out"
+    upkg "$type" get-hook-code-for-extra-hook-type "$target" "$action_index" 3> "$PACKAGE_MANAGER_WRAPPER_TMP_HOME/extra-hook-out" &
+    hook_code+="$(cat "$PACKAGE_MANAGER_WRAPPER_TMP_HOME/extra-hook-out")"
+    rm "$PACKAGE_MANAGER_WRAPPER_TMP_HOME/extra-hook-out"
     ;;
 esac
 

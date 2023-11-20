@@ -3,7 +3,7 @@
 target="${1:?Target expected}"
 type="${2:?package manager expected}"
 identifier="$(upkg "$type" listable-name "$target")"
-PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_DATA_HOME/run-on/$identifier"
+PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_WRAPPER_DATA_HOME/run-on/$identifier"
 mkdir -p "$PACKAGE_RUN_ON_HOME"
 
 event="${3:-*}"
