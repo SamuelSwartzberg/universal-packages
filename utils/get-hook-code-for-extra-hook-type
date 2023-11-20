@@ -4,16 +4,18 @@ target="${1:?Target expected}"
 type="${2:?package manager expected}"
 action_index="${3:?action index expected}"
 package_path="$(upkg "$type" which "$target")"
+package_name="$(basename "$package_path")"
 hook_code=""
 
 case "$action_index" in
   "3") # link
+    [[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
     if [[ -n "$package_executable" ]]; then
       if ask "Executable with same name as package found. Do you want add linking it to the hook?" Y; then
         read -rp "Rename to (optional, leave empty to not rename): " rename_to
         hook_code+="[[ -L \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\"\n"
-        hook_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\"\n"
-        hook_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/$package_name\" \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\"\n"
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/$package_name\"\n"
       fi
     fi
     if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
