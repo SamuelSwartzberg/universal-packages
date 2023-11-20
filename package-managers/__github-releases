@@ -8,31 +8,31 @@ case "$subcommand" in
   command -v github-releases >/dev/null || exit 1
   ;;
 "list-no-version")
-  github-releases list-no-version "$@"
+  github-releases list-no-version
   ;;
 "list-version") 
-  github-releases list-version "$@"
+  github-releases list-version
   ;;
 "list")
-  github-releases list "$@"
+  github-releases list
   ;;
 "listable-name")
-  github-releases listable-name "$@"
+  github-releases listable-name "$1"
   ;;
 "install")
-  github-releases install "$@"
+  github-releases install "$1"
   ;;
 "remove")
-  github-releases remove "$@"
+  github-releases remove "$1"
   ;;
 "upgrade")
-  github-releases upgrade "$@"
+  github-releases upgrade "$1"
   ;;
 "upgrade-all")
-  github-releases upgrade-all "$@"
+  github-releases upgrade-all
   ;;
 "which")
-  github-releases which "$@"
+  github-releases which "$1"
   ;;
 "package-manager")
   github-releases package-manager

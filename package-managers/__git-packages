@@ -8,31 +8,31 @@ case "$subcommand" in
   command -v git-packages >/dev/null || exit 1
   ;;
 "list-no-version")
-  git-packages list-no-version "$@"
+  git-packages list-no-version
   ;;
 "list-version") 
-  git-packages list-version "$@"
+  git-packages list-version
   ;;
 "list")
-  git-packages list "$@"
+  git-packages list
   ;;
 "listable-name")
-  git-packages listable-name "$@"
+  git-packages listable-name "$1"
   ;;
 "install")
-  git-packages install "$@"
+  git-packages install "$1"
   ;;
 "remove")
-  git-packages remove "$@"
+  git-packages remove "$1"
   ;;
 "upgrade")
-  git-packages upgrade "$@"
+  git-packages upgrade "$1"
   ;;
 "upgrade-all")
-  git-packages upgrade-all "$@"
+  git-packages upgrade-all
   ;;
 "which")
-  git-packages which "$@"
+  git-packages which "$1"
   ;;
 "package-manager")
   git-packages package-manager

@@ -136,29 +136,29 @@ lwpm | "list-with-package-manager")
   sed -e "s/^/$package_manager:/" <<<"$list"
   ;;
 wv | "with-version")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   pkg_command list-version | grep "$listable_name"
   ;;
 wvpm | "with-version-package-manager")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   $0 "$package_manager" list-version-package-manager | grep "$listable_name"
   ;;
 wwpm | "with-package-manager")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   $0 "$package_manager" list-with-package-manager | grep "$listable_name"
   ;;
 v | "version")
-  $0 "$package_manager" with-version "$@" | cut -d'@' -f2
+  $0 "$package_manager" with-version "${1:?Expected something to identify package as arg}" | cut -d'@' -f2
   ;;
 ct | "count")
   pkg_command list | wc -l
   ;;
 ii | "is-installed")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   pkg_command list | grep "^$listable_name$" 
   ;;
 ipm | "installed-package-manager")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   pkg_command list | grep -q "^$listable_name$" && echo "$package_manager"
   ;;
 b | "backup")
@@ -175,7 +175,7 @@ rpb | "replace-backup")
   $0 "$package_manager" backup
   ;;
 rfb | "remove-from-backup")
-  listable_name="$($0 "$package_manager" listable-name "$1")"
+  listable_name="$($0 "$package_manager" listable-name "${1:?Expected something to identify package as arg}")"
   echo "removing $listable_name from backup"
   rfbres="$($0 "$package_manager" read-backup)"
   echo "$rfbres"
@@ -215,29 +215,24 @@ mpm | "missing-package-manager")
   $0 "$package_manager" none-missing || echo "$package_manager"
   ;;
 i | "install")
-  pkg_command install "$@" && run-event "$1" "$package_manager" install
+  pkg_command install "${1:?Expected something to install}" && run-event "$1" "$package_manager" install
   ;;
 r | "remove")
-  pkg_command remove "$@"
-  $0 "$package_manager" remove-from-backup "$1"
+  pkg_command remove "${1:?Expected something to remove}"
   ;;
 is | "install-self")
-  pkg_command install-self "$@"
+  pkg_command install-self
   ;;
 u | "upgrade")
-  pkg_command upgrade "$@" && run-event "$1" "$package_manager" upgrade
-  ;;
-bd | "build" )
-  pkg_command build "$@"
+  pkg_command upgrade "${1:?Expected something to upgrade}" && run-event "$1" "$package_manager" upgrade
   ;;
 w | "which")
-  pkg_command which "$@"
-  ;;
-"link")
-  pkg_command link "$@"
+  pkg_command which "${1:?Expected something to identify package as arg}"
   ;;
 ua | "upgrade-all")
-  pkg_command upgrade-all "$@"
+  echo "Currently this doesn't handle hooks and thus shouldn't be used" >&2
+  exit 1
+  pkg_command upgrade-all 
   ;;
 pm | "package-manager")
   pkg_command package-manager
