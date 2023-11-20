@@ -63,12 +63,12 @@ hook_code="$(
 #!/usr/bin/env bash
 
 # This is an auto-generated hook created by upkg (package manager: $type) for $identifier, found at $package_path. Created at $(date -u +"%Y-%m-%dT%H:%M:%SZ").
-# This file will not be regenerated unless manually deleted. Feel free to edit this file.
+# This file will not be regenerated unless manually recreated/deleted. Feel free to edit this file.
 
 # upkg environment variables:
 
 export XDG_DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}"
-export UPKG_DATA_HOME="\$XDG_DATA_HOME/upkg"ƒ
+export UPKG_DATA_HOME="\$XDG_DATA_HOME/upkg"
 export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}"
 export UPKG_CACHE_HOME="\$XDG_CACHE_HOME/upkg"
 export XDG_TMP_HOME="\${TMPDIR:-\$HOME/.tmp}"
@@ -76,7 +76,7 @@ export UPKG_TMP_HOME="\$XDG_TMP_HOME/upkg"
 export PACKAGE_MANAGER_WRAPPER_DATA_HOME="\$UPKG_DATA_HOME/$type"
 export PACKAGE_MANAGER_WRAPPER_CACHE_HOME="\$UPKG_CACHE_HOME/$type"
 export PACKAGE_MANAGER_WRAPPER_TMP_HOME="\$UPKG_TMP_HOME/$type"
-export BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
+export XDG_BIN_HOME="\${XDG_BIN_HOME:-\$HOME/.local/bin}"
 export PACKAGE_IDENTIFIER='$identifier'
 export PACKAGE_HOOK_HOME="\${PACKAGE_MANAGER_WRAPPER_DATA_HOME}/hooks/\${PACKAGE_IDENTIFIER}"
 export package_path_at_install='$package_path'

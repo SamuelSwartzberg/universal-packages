@@ -13,8 +13,8 @@ case "$action_index" in
     if [[ -n "$package_executable" ]]; then
       if ask "Executable with same name as package found. Do you want add linking it to the hook?" Y; then
         read -rp "Rename to (optional, leave empty to not rename): " rename_to
-        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
-        hook_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+        hook_code+="[[ -L \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME}/${rename_to:-$package_name}\"\n"
         hook_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\"\n"
       fi
     fi
@@ -24,8 +24,8 @@ case "$action_index" in
         echo "Select a file to link:"
         linkme=$( ( { cd "$package_path" || exit; } && tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
         read -rp "Rename to (optional, leave empty to not rename): " rename_to
-        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
-        hook_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+        hook_code+="[[ -L \"\${XDG_BIN_HOME}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME}/${rename_to:-$linkme}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME}/${rename_to:-$linkme}\"\n"
         hook_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
         ask "Do you want to link something else?" N || break
       done
@@ -34,7 +34,7 @@ case "$action_index" in
   "4") # zig
     read -rp "Additional build args (optional, leave empty to not use any): " build_args
     # shellcheck disable=SC2016 # single quotes are intentional, this should only be expanded when the script is run
-    hook_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/.local/bin}")" '"$build_args"'\n'
+    hook_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME}")" '"$build_args"'\n'
     ;;
   "5") # install-script
 
