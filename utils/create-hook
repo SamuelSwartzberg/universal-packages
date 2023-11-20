@@ -41,7 +41,7 @@ while true; do
   mapfile -t extra_options < <(upkg "$type" extra-hook-types "$target")
   options=("${basic_options[@]}" "${extra_options[@]}")
   
-  action_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select hook type:: ")
+  action_choice=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select hook type: ")
   if [[ -z "$action_choice" ]]; then
     ask "No choice made. Do you want to cancel & exit?" Y && exit 1
   else
