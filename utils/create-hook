@@ -35,7 +35,7 @@ declare -a basic_options extra_options options
 while true; do
   # Ask user for hook type
   basic_options=(
-    "1) none"
+    "1) empty"
     "2) run a custom script"
   )
   mapfile -t extra_options < <(upkg "$type" extra-hook-types "$target")
@@ -96,7 +96,7 @@ hook_code+="\n\n"
 skip_edit=false
 
 case "$action_index" in
-  "1") # none
+  "1") # empty
     echo "Don't install anything. Empty script generated."
     skip_edit=true
     ;;
@@ -122,6 +122,6 @@ fi
 
 chmod +x "$hook_path"
 
-if ask "Hook created. Do you want to run it now?" Y; then
+if [[ "$skip_edit" != true ]] && ask "Hook created. Do you want to run it now?" Y; then
   "$hook_path"
 fi
