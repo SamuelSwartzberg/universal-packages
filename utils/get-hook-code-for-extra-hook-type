@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+target="${1:?Target expected}"
+type="${2:?package manager expected}"
+action_index="${3:?action index expected}"
+package_path="$(upkg "$type" which "$target")"
+hook_code=""
+
+case "$action_index" in
+  "3") # link
+    if [[ -n "$package_executable" ]]; then
+      if ask "Executable with same name as package found. Do you want add linking it to the hook?" Y; then
+        read -rp "Rename to (optional, leave empty to not rename): " rename_to
+        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$package_name}\"\n"
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/\${PACKAGE_NAME}\"\n"
+      fi
+    fi
+    if [[ -z "$package_executable" ]] || ask "Do you want to link something else?" N; then
+      # Loop to select executables
+      while true; do
+        echo "Select a file to link:"
+        linkme=$( ( { cd "$package_path" || exit; } && tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a file to link: ") )
+        read -rp "Rename to (optional, leave empty to not rename): " rename_to
+        hook_code+="[[ -L \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\" ]] && rm \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+        hook_code+="ln -sf \"\${PACKAGE_PATH}/$linkme\" \"\${XDG_BIN_HOME:-\$HOME/.local/bin}/${rename_to:-$linkme}\"\n"
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/$linkme\"\n"
+        ask "Do you want to link something else?" N || break
+      done
+    fi
+    ;;
+  "4") # zig
+    read -rp "Additional build args (optional, leave empty to not use any): " build_args
+    # shellcheck disable=SC2016 # single quotes are intentional, this should only be expanded when the script is run
+    hook_code+='zig build install --prefix "$(dirname "${XDG_BIN_HOME:-$HOME/.local/bin}")" '"$build_args"'\n'
+    ;;
+  "5") # install-script
+
+    declare -a install_scripts
+    declare -a update_scripts
+
+    for file in "$package_path"/install*; do
+      [[ -f "$file" ]] && install_scripts+=("$file")
+    done
+    for file in "$package_path"/update*; do
+      [[ -f "$file" ]] && update_scripts+=("$file")
+    done
+
+    # Loop to select install scripts
+    if [[ "${#install_scripts[@]}" -gt 0 ]]; then
+      if ask "Install script found. Do you want to add them to the hook?" Y; then
+        for script in "${install_scripts[@]}"; do
+          script_name=$(basename "$script")
+          read -rp "Additional args for $script_name (optional): " args
+          hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+          hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        done
+      fi
+    fi
+     # Loop to select install scripts
+    if [[ "${#update_scripts[@]}" -gt 0 ]]; then
+      if ask "Update script found. Do you want to add them to the hook?" Y; then
+        for script in "${update_scripts[@]}"; do
+          script_name=$(basename "$script")
+          read -rp "Additional args for $script_name (optional): " args
+          hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+          hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        done
+      fi
+    fi
+    if [[ "${#install_scripts[@]}" -eq 0 && "${#update_scripts[@]}" -eq 0 ]]  || ask "Do you want to add a/another script to the hook?" N; then
+      # Loop to select install scripts
+      while true; do
+        echo "Select a script to run:"
+        script=$( ( { cd "$package_path" || exit; } && tree -L 3 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select a script to run: " ) )
+        read -rp "Additional args (optional): " args
+        hook_code+="chmod +x \"\${PACKAGE_PATH}/$script_name\"\n"
+        hook_code+="\"\${PACKAGE_PATH}/$script_name\" $args\n"
+        ask "Do you want to run something else?" N || break
+      done
+    fi
+    ;;
+  "6") # make
+    declare -a makefiles
+
+    for file in GNUmakefile makefile Makefile; do
+      [[ -f "$package_path/$file" ]] && makefiles+=("$file")
+    done
+
+    # if there is only one makefile, use it
+    makefile=""
+    if [[ ${#makefiles[@]} -eq 1 ]]; then
+      makefile="${makefiles[0]}"
+    else
+      # select makefile
+      echo "Select a makefile to use:"
+      select selectedmakefile in "${makefiles[@]}"; do
+        makefile="$selectedmakefile"
+        break
+      done
+    fi
+    hook_code+="export MAKEFILE=\"\${PACKAGE_PATH}/$makefile\"\n\n"
+    hook_code+="make -C \"\${PACKAGE_PATH}\"  -f \"\${MAKEFILE}\" install\n"
+    ;;
+esac
+
+echo "$hook_code"

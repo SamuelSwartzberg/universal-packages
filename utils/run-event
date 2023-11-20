@@ -4,15 +4,14 @@ target="${1:?Target expected}"
 type="${2:?package manager expected}"
 event="${3?Hook event expected}"
 identifier="$(upkg "$type" listable-name "$target")"
-DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
+PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_RUN_ON_DATA_HOME/$identifier"
 
 IFS=$'\n'
 shopt -s nullglob
 
 found_at_least_one_hook_to_run=false
 
-for policy_dir in "$RUN_ON_HOME"/"$event"/*; do
+for policy_dir in "$PACKAGE_RUN_ON_HOME"/"$event"/*; do
   if [ -n "$(ls -A "$policy_dir")" ]; then
     found_at_least_one_hook_to_run=true
   fi

@@ -49,6 +49,24 @@ case "$subcommand" in
 "help")
   github-releases help
   ;;
+"extra-env")
+  target="${1:?Target expected}"
+  cat <<EOF
+export PACKAGES_HOME="\${PACKAGE_MANAGER_DATA_HOME}/packages"
+export PACKAGE_NAME='$($0 listable-name "$target")'
+export PACKAGE_PATH="\${PACKAGES_HOME}/\${PACKAGE_IDENTIFIER}"
+EOF
+  ;;
+"extra-hook-types")
+  extra-hook-types "$1" git-packages
+  ;;
+"extra-info")
+  echo '# The structure of the package at install time is (provided for convenience only):'
+  echo -e "\n$(tree -L 3 --noreport "$($0 which "$1")" | sed 's/^/# /')\n\n"
+  ;;
+"get-hook-code-for-extra-hook-type")
+  get-hook-code-for-extra-hook-type "$1" github-releases "$2"
+  ;;
 *)
   echo "gh: unknown subcommand: $subcommand" >&2
   exit 1

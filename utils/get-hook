@@ -4,11 +4,10 @@ target="${1:?Target expected}"
 type="${2:?package manager expected}"
 hook_type="$3"
 identifier="$(upkg "$type" listable-name "$target")"
-DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-HOOK_HOME="$DATA_HOME/hooks/$identifier"
-mkdir -p "$HOOK_HOME"
+PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_DATA_HOME/hooks/$identifier"
+mkdir -p "$PACKAGE_HOOK_HOME"
 if [[ -z "$hook_type" ]]; then
-  hook_type=$( ( { cd "$HOOK_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
+  hook_type=$( ( { cd "$PACKAGE_HOOK_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
 fi
 
 if [[ -z "$hook_type" ]]; then
@@ -16,7 +15,7 @@ if [[ -z "$hook_type" ]]; then
   exit 1
 fi
 
-hook_path="$HOOK_HOME/$hook_type"
+hook_path="$PACKAGE_HOOK_HOME/$hook_type"
 
 if [[ -f "$hook_path" ]]; then
   echo "$hook_path"

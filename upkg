@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
+# basic params
 
 package_manager="$1"
 
+# relative variables
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)
+
+# constants
+
 export PATH="$SCRIPT_DIR"/utils:"$PATH"
+export UPKG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg"
+export UPKG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/upkg"
+export UPKG_TMP_HOME="${TMPDIR:-$HOME/.tmp}/upkg"
 
 if [ -z "$package_manager" ]; then
   package_manager="help" # default to help
@@ -50,6 +59,12 @@ case "$package_manager" in
   cat "$SCRIPT_DIR"/help_message
   ;;
 esac
+
+export PACKAGE_MANAGER_DATA_HOME="$UPKG_DATA_HOME/$package_manager"
+export PACKAGE_MANAGER_CACHE_HOME="$UPKG_CACHE_HOME/$package_manager"
+export PACKAGE_MANAGER_TMP_HOME="$UPKG_TMP_HOME/$package_manager"
+export PACKAGE_MANAGER_HOOKS_DATA_HOME="$PACKAGE_MANAGER_DATA_HOME/hooks"
+export PACKAGE_MANAGER_RUN_ON_DATA_HOME="$PACKAGE_MANAGER_DATA_HOME/run-on"
 
 package_manager_command_path="$SCRIPT_DIR"/package-managers/__"$package_manager"
 

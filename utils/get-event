@@ -3,13 +3,12 @@
 target="${1:?Target expected}"
 type="${2:?package manager expected}"
 identifier="$(upkg "$type" listable-name "$target")"
-DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
-mkdir -p "$RUN_ON_HOME"
+PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_DATA_HOME/run-on/$identifier"
+mkdir -p "$PACKAGE_RUN_ON_HOME"
 
 event="$3"
 if [[ -z "$event" ]]; then
-  event=$( ( { cd "$RUN_ON_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select event: " ) )
+  event=$( ( { cd "$PACKAGE_RUN_ON_HOME" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select event: " ) )
 fi
 
 if [[ -z "$event" ]]; then
@@ -19,7 +18,7 @@ fi
 
 policy="$4"
 if [[ -z "$policy" ]]; then
-  policy=$( ( { cd "$RUN_ON_HOME/$event" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select policy: " ) )
+  policy=$( ( { cd "$PACKAGE_RUN_ON_HOME/$event" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select policy: " ) )
 fi
 
 if [[ -z "$policy" ]]; then
@@ -29,7 +28,7 @@ fi
 
 hook_type="$5"
 if [[ -z "$hook_type" ]]; then
-  hook_type=$( ( { cd "$RUN_ON_HOME/$event/$policy" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
+  hook_type=$( ( { cd "$PACKAGE_RUN_ON_HOME/$event/$policy" || exit; } && tree -L 1 -if --noreport | cut -d / -f '2-' | tail -n '+2' | fzf --prompt="Select hook: " ) )
 fi
 
 if [[ -z "$hook_type" ]]; then
@@ -37,7 +36,7 @@ if [[ -z "$hook_type" ]]; then
   exit 1
 fi
 
-hook_path="$RUN_ON_HOME/$event/$policy/$hook_type"
+hook_path="$PACKAGE_RUN_ON_HOME/$event/$policy/$hook_type"
 
 if [[ -f "$hook_path" ]]; then
   echo "$hook_path"

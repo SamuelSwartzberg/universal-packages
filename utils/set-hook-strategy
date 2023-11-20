@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 
+# parameters
+
 target="${1:?Target expected}"
 type="${2:?package manager expected}"
 hook_type="${3:-default}"
+
+# derived variables
+
 identifier="$(upkg "$type" listable-name "$target")"
-DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/upkg/$type"
-HOOK_HOME="$DATA_HOME/hooks/$identifier"
-hook_path="$HOOK_HOME/$hook_type"
-RUN_ON_HOME="$DATA_HOME/run-on/$identifier"
+PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_HOOKS_DATA_HOME/$identifier"
+PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_RUN_ON_DATA_HOME/$identifier"
+hook_path="$PACKAGE_HOOK_HOME/$hook_type"
 
 
 IFS=$'\n'
 shopt -s nullglob
 
-for prev_hook_location in "$RUN_ON_HOME"/*/*/"$hook_type"; # RUN_ON_HOME/<run_on>/<policy>/<hook_type>
+for prev_hook_location in "$PACKAGE_RUN_ON_HOME"/*/*/"$hook_type"; # PACKAGE_RUN_ON_HOME/<run_on>/<policy>/<hook_type>
 do
   rm "$prev_hook_location"
 done
@@ -42,7 +46,7 @@ for run_on in "${run_ons[@]}"; do
       ask "You chose $policy_choice, is that correct?" Y && break
     fi
   done
-  run_on_path="$RUN_ON_HOME/$run_on/$policy_choice"
+  run_on_path="$PACKAGE_RUN_ON_HOME/$run_on/$policy_choice"
   mkdir -p "$run_on_path"
   ln -sf "$hook_path" "$run_on_path/$hook_type"
 done

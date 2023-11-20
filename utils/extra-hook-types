@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+target="${1:?Target expected}"
+type="${2:?package manager expected}"
+package_path="$(upkg "$type" which "$target")"
+
+package_name="$(basename "$package_path")"
+
+
+[[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+[[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+
+# Check for files and store them in arrays
+package_executable=""
+build_zig=""
+declare -a makefiles
+declare -a install_scripts
+declare -a update_scripts
+
+[[ -f "$package_path/$package_name" ]] && package_executable="$package_path/$package_name"
+[[ -f "$package_path/build.zig" ]] && build_zig="$package_path/build.zig"
+for file in GNUmakefile makefile Makefile; do
+  [[ -f "$package_path/$file" ]] && makefiles+=("$file")
+done
+for file in "$package_path"/install*; do
+  [[ -f "$file" ]] && install_scripts+=("$file")
+done
+for file in "$package_path"/update*; do
+  [[ -f "$file" ]] && update_scripts+=("$file")
+done
+
+# Generate hint text dynamically
+link_hint=$([[ -n "$package_executable" ]] && echo "(executable with same name as package found)")
+zig_hint=$([[ -n "$build_zig" ]] && echo "(build.zig found)" || echo "(no build.zig found!)")
+make_hint=$([[ ${#makefiles[@]} -gt 0 ]] && echo "(makefiles found: ${makefiles[*]})")
+install_script_hint=$([[ ${#install_scripts[@]} -gt 0 ]] && echo "(install script found: ${install_scripts[*]})")
+update_script_hint=$([[ ${#update_scripts[@]} -gt 0 ]] && echo "(update script found: ${update_scripts[*]})")
+
+cat <<EOF
+"3) link $link_hint"
+"4) build with zig $zig_hint"
+"5) run script $install_script_hint $update_script_hint"
+"6) make $make_hint"
+EOF
