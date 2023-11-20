@@ -9,6 +9,10 @@ hook_type="${3:-default}"
 # derived variables
 
 identifier="$(upkg "$type" listable-name "$target")"
+if [[ -z "$identifier" ]]; then
+  echo "Was not able to find identifier for $target of $type. Aborting." >&2
+  exit 1
+fi
 PACKAGE_HOOK_HOME="$PACKAGE_MANAGER_WRAPPER_HOOKS_DATA_HOME/$identifier"
 PACKAGE_RUN_ON_HOME="$PACKAGE_MANAGER_WRAPPER_RUN_ON_DATA_HOME/$identifier"
 hook_path="$PACKAGE_HOOK_HOME/$hook_type"

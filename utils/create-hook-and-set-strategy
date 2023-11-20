@@ -4,5 +4,5 @@ target="${1:?Target expected}"
 type="${2:?package manager expected}"
 hook_type="${3:-default}"
 
-create-hook "$target" "$type" "$hook_type"
+create-hook "$target" "$type" "$hook_type" || exit 1
 set-hook-strategy "$target" "$type" "$hook_type"
